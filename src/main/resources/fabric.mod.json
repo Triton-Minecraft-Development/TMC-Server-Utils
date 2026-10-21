@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "tmc-server-utils",
+	"version": "${version}",
+	"name": "TMC Server Utils",
+	"description": "Core mod for the Triton Minecraft SMP",
+	"authors": [
+		"Spctre"
+	],
+	"contact": {
+		"homepage": "https://github.com/Triton-Minecraft-Development/TMC-Server-Utils",
+		"sources": "https://github.com/Triton-Minecraft-Development/TMC-Server-Utils"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/tmc-server-utils/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"tmc.TMCServerUtils"
+		]
+	},
+	"mixins": [
+		"tmc-server-utils.mixins.json",
+		{
+			"config": "tmc-server-utils.mixins.json",
+			"environment": "server"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

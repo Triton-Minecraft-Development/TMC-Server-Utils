@@ -20,7 +20,6 @@
 		]
 	},
 	"mixins": [
-		"tmc-server-utils.mixins.json",
 		{
 			"config": "tmc-server-utils.mixins.json",
 			"environment": "server"

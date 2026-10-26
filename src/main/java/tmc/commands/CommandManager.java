@@ -1,77 +1,31 @@
 package tmc.commands;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.permissions.Permissions;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import tmc.commands.impl.BroadcastCommand;
+import tmc.commands.impl.DateTimeCommand;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CommandManager
 {
+    private final List<Command> cmds = new ArrayList<>();
+
     public void registerCommands()
     {
-        dateTimeCommand();
-    }
+        cmds.add(new DateTimeCommand());
+        cmds.add(new BroadcastCommand());
 
-    private void dateTimeCommand()
-    {
         CommandRegistrationCallback.EVENT.register((dispatcher, _, _) ->
-            dispatcher.register(net.minecraft.commands.Commands.literal("datetime")
-                .requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-                .then(net.minecraft.commands.Commands.literal("year")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getYear())), true);
-                        return LocalDateTime.now().getYear();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("month")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getMonth())), true);
-                        return LocalDateTime.now().getMonth().getValue();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("day")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getSecond())), true);
-                        return LocalDateTime.now().getSecond();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("hour")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getHour())), true);
-                        return LocalDateTime.now().getHour();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("minute")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getMinute())), true);
-                        return LocalDateTime.now().getMinute();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("second")
-                    .executes(ctx ->
-                    {
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(LocalDateTime.now().getSecond())), true);
-                        return LocalDateTime.now().getSecond();
-                    }))
-                .then(net.minecraft.commands.Commands.literal("secondsSinceServerStart")
-                    .executes(ctx ->
-                    {
-                        LocalDate targetDate = LocalDate.of(2026, 10, 9);
-                        ZoneId zone = ZoneId.systemDefault();
+        {
+            LiteralArgumentBuilder<CommandSourceStack> base = Commands.literal("tmc");
+            for (Command cmd : cmds)
+                base.then(cmd.build());
 
-                        LocalDateTime startOfDay = targetDate.atStartOfDay(zone).toLocalDateTime();
-
-                        LocalDateTime now = LocalDateTime.now(zone);
-
-                        Duration duration = Duration.between(startOfDay, now);
-                        long secondsElapsed = duration.getSeconds();
-
-                        ctx.getSource().sendSuccess(() -> Component.literal(String.valueOf(secondsElapsed)), true);
-                        return Math.toIntExact(secondsElapsed);
-                    }))));
+            dispatcher.register(base);
+        });
     }
 }

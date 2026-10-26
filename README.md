@@ -1,9 +1,13 @@
 # TMC Server Utils
 
-## Setup
+## Server-side utilities & fixes for the Triton Minecraft SMP
 
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
+### Commands
+- DateTime
+  - Utilized by server datapack to handle punishment lifecycles
+- Broadcast
+  - Make quick announcements
 
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+### Changes
+- Hopper Minecarts exclusively use vanilla minecart behavior to prevent farms from breaking.
+  - Other minecart variants abide by experimental changes (100 bps max speed) 

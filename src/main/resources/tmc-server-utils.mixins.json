@@ -3,7 +3,8 @@
 	"package": "tmc.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"AbstractMinecartMixin"
+		"AbstractMinecartMixin",
+		"ServerExplosionMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

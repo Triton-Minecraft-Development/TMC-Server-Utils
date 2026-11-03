@@ -5,6 +5,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.permissions.Permissions;
 import tmc.commands.Command;
+import tmc.config.ConfigManager;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -60,11 +61,10 @@ public class DateTimeCommand extends Command
             .then(net.minecraft.commands.Commands.literal("secondsSinceServerStart")
                 .executes(ctx ->
                 {
-                    LocalDate targetDate = LocalDate.of(2026, 10, 9);
+                    LocalDate targetDate = ConfigManager.get().serverStartDate;
                     ZoneId zone = ZoneId.systemDefault();
 
                     LocalDateTime startOfDay = targetDate.atStartOfDay(zone).toLocalDateTime();
-
                     LocalDateTime now = LocalDateTime.now(zone);
 
                     Duration duration = Duration.between(startOfDay, now);

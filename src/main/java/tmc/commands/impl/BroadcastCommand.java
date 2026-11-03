@@ -18,9 +18,9 @@ public class BroadcastCommand extends Command
     }
 
     @Override
-    protected ArgumentBuilder<CommandSourceStack, ?> buildArgs(ArgumentBuilder<CommandSourceStack, ?> node)
+    protected ArgumentBuilder<CommandSourceStack, ?> buildArgs(ArgumentBuilder<CommandSourceStack, ?> cmd)
     {
-        return node.then(Commands.argument("message", StringArgumentType.greedyString())
+        return cmd.then(Commands.argument("message", StringArgumentType.greedyString())
             .executes(ctx ->
             {
                 String entry = StringArgumentType.getString(ctx, "message");

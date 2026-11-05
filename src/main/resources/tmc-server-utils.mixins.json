@@ -1,15 +1,19 @@
 {
-	"required": true,
-	"package": "tmc.mixin",
-	"compatibilityLevel": "JAVA_25",
-	"mixins": [
-		"AbstractMinecartMixin",
-		"ServerExplosionMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
+  "required": true,
+  "package": "tmc.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "ender_dragon_fight_experiments.DragonStrafePlayerPhase",
+    "ender_dragon_fight_experiments.EnderDragonPhaseManagerMixin",
+    "ender_dragon_fight_experiments.LivingEntityMixin",
+    "gamerules.exposions.AbstractMinecartMixin",
+    "gamerules.exposions.EntityMixin",
+    "gamerules.exposions.ServerExplosionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
 	}
 }

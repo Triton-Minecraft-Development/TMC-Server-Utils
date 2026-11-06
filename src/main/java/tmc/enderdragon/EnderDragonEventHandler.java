@@ -30,7 +30,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
 
     private static final Component STAGE_TRANSITION_MESSAGE = Component.literal(ChatFormatting.GRAY + "" + ChatFormatting.ITALIC + "You feel the ground start to tremble. Something feels off...");
     private static final Component INITIAL_TITLE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "ENDER DRAGON - PHASE II");
-    private static final Component INITIAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has awoken");
+    private static final Component INITIAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has awakened");
     private static final Component INITIAL_CHAT_MESSAGE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has entered Phase II!");
 
     public EnderDragonEventHandler()

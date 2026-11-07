@@ -1,5 +1,6 @@
 package tmc.enderdragon;
 
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
@@ -13,12 +14,15 @@ import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
+import tmc.enderdragon.phase.ClosingDialoguePerchPhase;
+import tmc.enderdragon.phase.OpeningDialoguePerchPhase;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.HashMap;
 
 public class TMCEnderDragonManager {
 
+    // FIXME: Attribute Cap! A true 2000 HP is NOT POSSIBLE
     private static final float STAGE_2_HEALTH = 2000f;
 
     private static final double BLAST_RADIUS = 50;
@@ -47,7 +51,7 @@ public class TMCEnderDragonManager {
     {
         if (enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA) && enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER))
         {
-            if (Boolean.TRUE.equals(enderDragon.getAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA)))
+            if (getDragonStage(enderDragon) != EnderDragonStage.VANILLA)
             {
                 return false;
             }
@@ -57,7 +61,7 @@ public class TMCEnderDragonManager {
                 dragonHealthInstance.setBaseValue(STAGE_2_HEALTH);
             }
             enderDragon.setHealth(STAGE_2_HEALTH);
-            setHasDragonTransitioned(enderDragon, true);
+            setDragonStage(enderDragon, EnderDragonStage.STAGE_2);
             setAwaitingDialogue(enderDragon, true);
             enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
             enderDragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
@@ -65,24 +69,47 @@ public class TMCEnderDragonManager {
             {
                 return false;
             }
-            TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon);
+            TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon, EnderDragonStage.STAGE_2);
             return true;
         }
         return false;
     }
 
     /**
-     * Sets if the given Ender Dragon is on stage 2
-     * @param dragon The Ender Dragon to modify
-     * @param b True if the dragon is on stage 2, false otherwise
+     * Attempts to start the closing dialogue stage of the Ender Dragon fight
+     * @param enderDragon
+     * @return True if the stage was successfully started. False otherwise
      */
-    public static void setHasDragonTransitioned(EnderDragon dragon, boolean b)
+    public static boolean tryStartClosingDialogue(EnderDragon enderDragon)
+    {
+        if (!enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA) || getDragonStage(enderDragon) != EnderDragonStage.STAGE_2)
+        {
+            return false;
+        }
+        if (!(enderDragon.level() instanceof ServerLevel serverLevel))
+        {
+            return false;
+        }
+        setAwaitingDialogue(enderDragon, true);
+        setDragonStage(enderDragon, EnderDragonStage.DEATH);
+        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
+        enderDragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
+        TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon, EnderDragonStage.DEATH);
+        return true;
+    }
+
+    /**
+     * Sets the current boss fight stage on the given Ender Dragon
+     * @param dragon The Ender Dragon to modify
+     * @param stage The {@linkplain EnderDragonStage stage} of the boss fight
+     */
+    public static void setDragonStage(EnderDragon dragon, EnderDragonStage stage)
     {
         if (!dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA))
         {
             return;
         }
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, b);
+        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, stage.ordinal());
     }
 
     /**
@@ -92,9 +119,18 @@ public class TMCEnderDragonManager {
      * if the {@linkplain TMCDataAttachments#ENDER_DRAGON_TRANSITION_DATA transition boolean}
      * cannot be accessed
      */
-    public static boolean getHasDragonTransitioned(EnderDragon dragon)
+    public static EnderDragonStage getDragonStage(EnderDragon dragon)
     {
-        return dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA) && Boolean.TRUE.equals(dragon.getAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA));
+        if (!dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA))
+        {
+            return EnderDragonStage.VANILLA;
+        }
+        Integer v = dragon.getAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA);
+        if (v == null)
+        {
+            return EnderDragonStage.VANILLA;
+        }
+        return EnderDragonStage.values()[v];
     }
 
     /**
@@ -113,8 +149,8 @@ public class TMCEnderDragonManager {
 
     /**
      * Sets if the given Ender Dragon is awaiting dialogue. This DOES NOT
-     * change the dragon to the {@linkplain Phases#DIALOGUE_PERCH dialogue perch}
-     * phase
+     * change the dragon to the {@linkplain Phases#OPENING_DIALOGUE_PERCH opening dialogue perch}
+     * phase or the {@linkplain Phases#CLOSING_DIALOGUE_PERCH closing dialogue perch} phase
      * @param dragon The Ender Dragon to check
      * @param pending If the dragon should be awaiting dialogue
      */
@@ -124,38 +160,52 @@ public class TMCEnderDragonManager {
     }
 
     /**
-     * Ticks the Stage 2 timer for the given Ender Dragon and calls the {@linkplain TMCEnderDragonEvents#STAGE_2_TICK phase 2 tick update event}
+     * Ticks the timer for the given Ender Dragon and {@linkplain EnderDragonStage Ender Dragon fight stage} and calls the {@linkplain TMCEnderDragonEvents#ON_STAGE_TICK stage tick update event}
      * @param serverLevel The current server level of the dragon
      * @param dragon The dragon to update
+     * @param stage The current {@linkplain EnderDragonStage Ender Dragon Stage} to tick
      */
-    public static void tickStage2Timer(ServerLevel serverLevel, EnderDragon dragon)
+    public static void tickStageTimer(ServerLevel serverLevel, EnderDragon dragon, EnderDragonStage stage)
     {
-        if (!dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER))
+        AttachmentType<Integer> attachment = switch (stage)
+        {
+            case VANILLA -> TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER;
+            case STAGE_2 -> TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER;
+            case DEATH -> TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER;
+        };
+        if (!dragon.hasAttached(attachment))
         {
             return;
         }
-        Integer newTicks = dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, ticks -> ticks + 1);
+        Integer newTicks = dragon.modifyAttached(attachment, ticks -> ticks + 1);
         if (newTicks == null)
         {
             return;
         }
-        TMCEnderDragonEvents.STAGE_2_TICK.invoker().onStageTick(serverLevel, dragon, newTicks);
+        TMCEnderDragonEvents.ON_STAGE_TICK.invoker().onStageTick(serverLevel, dragon, stage, newTicks);
     }
 
     /**
-     * Gets the current tick count for the Ender Dragon on stage 2
+     * Gets the current tick count for the Ender Dragon on the given stage
      * @param dragon The Ender Dragon to check
+     * @param stage The {@linkplain EnderDragonStage stage} of the Ender Dragon fight
      * @return The current time in ticks the dragon has been active in stage 2.
-     * Returns 0 if the {@linkplain TMCDataAttachments#ENDER_DRAGON_STAGE_2_TIMER stage 2 timer}
+     * Returns 0 if the specified {@linkplain EnderDragonStage stage} timer
      * cannot be accessed.
      */
-    public static int getStage2TimerTicks(EnderDragon dragon)
+    public static int getStageTimerTicks(EnderDragon dragon, EnderDragonStage stage)
     {
-        if (!dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER))
+        AttachmentType<Integer> attachment = switch (stage)
+        {
+            case VANILLA -> TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER;
+            case STAGE_2 -> TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER;
+            case DEATH -> TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER;
+        };
+        if (!dragon.hasAttached(attachment))
         {
             return 0;
         }
-        Integer ticks = dragon.getAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
+        Integer ticks = dragon.getAttached(attachment);
         return ticks != null ? ticks : 0;
     }
 
@@ -184,6 +234,32 @@ public class TMCEnderDragonManager {
         player.setDeltaMovement(dirX * strength, LIFT, dirZ * strength);
 
         player.connection.send(new ClientboundSetEntityMotionPacket(player));
+
+        /*
+        Damage is calculated as follows:
+        - Distance < 23.37 blocks
+          damage = -5 * e^(0.1 * distance) + 105
+        - Distance >= 23.37 blocks
+          damage = -2 * distance + 100
+
+         damage is dealt as a percentage of the player's max health
+
+         This will (ideally) insta-kill players camping under/close
+         to the dragon, or at least severely injure them
+
+         Graph on Desmos: https://www.desmos.com/calculator/cbtgrycarb
+         */
+
+        double damage;
+        if (distance < 23.37)
+        {
+            damage = -5 * Math.exp(0.1 * distance) + 105;
+        } else
+        {
+            damage = -2 * distance + 100;
+        }
+        damage = Math.clamp(player.getMaxHealth() * (damage / 100), 0, player.getMaxHealth());
+        player.hurtServer(player.level(), player.damageSources().indirectMagic(player, dragon), (float) damage);
     }
 
     /**
@@ -197,7 +273,12 @@ public class TMCEnderDragonManager {
         /**
          * Phase the Ender Dragon enters when perching for initial dialogue
          */
-        public static final EnderDragonPhase<DialoguePerchPhase> DIALOGUE_PERCH = create(DialoguePerchPhase.class, "DialoguePerch", EnderDragonPhase.SITTING_SCANNING);
+        public static final EnderDragonPhase<OpeningDialoguePerchPhase> OPENING_DIALOGUE_PERCH = create(OpeningDialoguePerchPhase.class, "OpeningDialoguePerch", EnderDragonPhase.SITTING_SCANNING);
+
+        /**
+         * Phase the Ender Dragon enters when perching for final dialogue
+         */
+        public static final EnderDragonPhase<ClosingDialoguePerchPhase> CLOSING_DIALOGUE_PERCH = create(ClosingDialoguePerchPhase.class, "ClosingDialoguePerch", EnderDragonPhase.SITTING_SCANNING);
 
         /**
          * Registers a new {@linkplain EnderDragonPhase Ender Dragon Phase}

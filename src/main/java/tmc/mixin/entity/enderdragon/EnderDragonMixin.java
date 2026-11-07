@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.attachments.TMCDataAttachments;
+import tmc.enderdragon.EnderDragonStage;
 import tmc.enderdragon.TMCEnderDragonManager;
 
 /**
@@ -43,9 +44,11 @@ public abstract class EnderDragonMixin {
         {
             return;
         }
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, false);
+        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, EnderDragonStage.VANILLA.ordinal());
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING, false);
+        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER, 0);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
+        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER, 0);
     }
 

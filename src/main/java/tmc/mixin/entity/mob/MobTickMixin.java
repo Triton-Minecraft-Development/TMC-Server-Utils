@@ -26,10 +26,6 @@ public abstract class MobTickMixin {
         {
             return;
         }
-        if (!TMCEnderDragonManager.getHasDragonTransitioned(enderDragon))
-        {
-            return;
-        }
-        TMCEnderDragonManager.tickStage2Timer(serverLevel, enderDragon);
+        TMCEnderDragonManager.tickStageTimer(serverLevel, enderDragon, TMCEnderDragonManager.getDragonStage(enderDragon));
     }
 }

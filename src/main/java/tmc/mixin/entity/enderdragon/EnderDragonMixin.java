@@ -25,9 +25,11 @@ import tmc.enderdragon.TMCEnderDragonManager;
  * Mixin for adding Data Attachments to the Ender Dragon
  * @see TMCDataAttachments#ENDER_DRAGON_TRANSITION_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_PENDING
+ * @see TMCDataAttachments#ENDER_DRAGON_VANILLA_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_STAGE_2_TIMER
+ * @see TMCDataAttachments#ENDER_DRAGON_DEATH_STAGE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_TIMER
- *
+ * @see TMCDataAttachments#LOGGED_ATTACKERS
  */
 @Mixin(EnderDragon.class)
 public abstract class EnderDragonMixin {

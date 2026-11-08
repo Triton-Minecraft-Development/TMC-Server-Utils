@@ -26,8 +26,7 @@ public class TMCDataAttachments {
 
     /**
      * Ender dragon data for checking if the dragon is
-     * awaiting sending dialogue to welcome the
-     * players to phase 2
+     * awaiting to send dialogue
      */
     public static final AttachmentType<Boolean> ENDER_DRAGON_DIALOGUE_PENDING = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_awaiting_dialogue"),
@@ -87,6 +86,9 @@ public class TMCDataAttachments {
                     .persistent(AttackerHistory.CODEC)
     );
 
+    /**
+     * Attachment used for tracking # of Ender Dragon kills a player has
+     */
     public static final AttachmentType<Integer> PLAYER_ENDER_DRAGON_KILLS = AttachmentRegistry.create(
             TMCServerUtils.of("player_ender_dragon_kills"),
             integerBuilder -> integerBuilder

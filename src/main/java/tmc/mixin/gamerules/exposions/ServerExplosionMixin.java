@@ -1,4 +1,4 @@
-package tmc.mixin;
+package tmc.mixin.gamerules.exposions;
 
 import net.minecraft.world.level.ServerExplosion;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +14,7 @@ public abstract class ServerExplosionMixin
     @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
     private void onDisableExplosionDamage(CallbackInfoReturnable<Integer> cir)
     {
-        boolean isDisabled = ConfigManager.get().gameRules.get(GameRules.DISABLE_EXPLOSION_DAMAGE);
-        if (isDisabled) cir.cancel();
+        boolean enabled = (ConfigManager.get().gameRules.get(GameRules.DISABLE_EXPLOSION_DAMAGE));
+        if (enabled) cir.cancel();
     }
 }

@@ -9,6 +9,12 @@
     "entity.enderdragon.EnderDragonPhaseMixin",
     "entity.mob.MobTickMixin",
     "entity.serverplayer.ServerPlayerMixin"
+    "ender_dragon_fight_experiments.DragonStrafePlayerPhase",
+    "ender_dragon_fight_experiments.EnderDragonPhaseManagerMixin",
+    "ender_dragon_fight_experiments.LivingEntityMixin",
+    "gamerules.exposions.AbstractMinecartMixin",
+    "gamerules.exposions.EntityMixin",
+    "gamerules.exposions.ServerExplosionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

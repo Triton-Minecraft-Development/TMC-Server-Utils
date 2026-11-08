@@ -14,11 +14,15 @@ import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.AttackerHistory;
+import tmc.damagetypes.TMCDamageTypes;
 import tmc.enderdragon.phase.ClosingDialoguePerchPhase;
 import tmc.enderdragon.phase.OpeningDialoguePerchPhase;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.UUID;
 
 public class TMCEnderDragonManager {
 
@@ -40,6 +44,44 @@ public class TMCEnderDragonManager {
     public static Component createEnderDragonDialogueComponent(String message)
     {
         return Component.literal(ChatFormatting.DARK_RED + "[BOSS] " + ChatFormatting.LIGHT_PURPLE + "[Ender Dragon] " + ChatFormatting.WHITE + message);
+    }
+
+    public static boolean hasAttachments(EnderDragon enderDragon)
+    {
+        return enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA) &&
+                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING) &&
+                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER) &&
+                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER) &&
+                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER) &&
+                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER) &&
+                enderDragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS);
+    }
+
+    public static void logPlayerAttacker(EnderDragon dragon, ServerPlayer player)
+    {
+        if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
+        {
+            return;
+        }
+        dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistory ->
+        {
+            attackerHistory.addAttacker(player.getUUID());
+            return attackerHistory;
+        });
+    }
+
+    public static HashSet<UUID> getAllAttackers(EnderDragon dragon)
+    {
+        if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
+        {
+            return new HashSet<>();
+        }
+        AttackerHistory attackerHistory = dragon.getAttached(TMCDataAttachments.LOGGED_ATTACKERS);
+        if (attackerHistory == null)
+        {
+            return new HashSet<>();
+        }
+        return new HashSet<>(attackerHistory.attackerUuids());
     }
 
     /**
@@ -259,7 +301,24 @@ public class TMCEnderDragonManager {
             damage = -2 * distance + 100;
         }
         damage = Math.clamp(player.getMaxHealth() * (damage / 100), 0, player.getMaxHealth());
-        player.hurtServer(player.level(), player.damageSources().indirectMagic(player, dragon), (float) damage);
+
+        // Remove invulnerability time to let damage through. Don't let players abuse I-frames for this
+        // Why not apply bypasses_cooldown tag?
+        // - This is the only instance that should not be affected by cooldown
+        // - This damage type bypasses armor, enchantments, effects/resistance, and shields
+        // - Having this kind of damage not have a cooldown is way too strong for vanilla gear
+
+        // Damage scales based on difficulty! At closest range:
+        // Peaceful = 0 (always)
+        // Easy = ~50% of max health
+        // Medium = 100% of max health
+        // Hard = 150% of max health
+        // Scaling from distance does not change
+
+        player.invulnerableTime = 0;
+        ServerLevel serverLevel = player.level();
+        player.hurtServer(serverLevel, TMCDamageTypes.getDamageSource(TMCDamageTypes.ENDER_DRAGON_MAGIC, serverLevel, player, dragon), (float) damage);
+        player.invulnerableTime = 0;
     }
 
     /**

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import tmc.attachments.TMCDataAttachments;
 import tmc.commands.CommandManager;
 import tmc.config.ConfigManager;
+import tmc.damagetypes.TMCDamageTypes;
 import tmc.enderdragon.EnderDragonEventHandler;
 import tmc.enderdragon.TMCEnderDragonManager;
 
@@ -54,6 +55,7 @@ public class TMCServerUtils implements ModInitializer
 
         TMCDataAttachments.initialize();
         TMCEnderDragonManager.Phases.initialize();
+        TMCDamageTypes.initialize();
         new EnderDragonEventHandler();
     }
 }

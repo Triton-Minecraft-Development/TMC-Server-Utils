@@ -2,11 +2,13 @@ package tmc.enderdragon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.commands.impl.EnderDragonsSlayedCommand;
 import tmc.event.TMCEnderDragonEvents;
 
 /**
@@ -38,10 +41,20 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     private static final Component INITIAL_CHAT_MESSAGE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has entered Phase II!");
 
     private static final Component FINAL_TITLE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "ENDER DRAGON DEFEATED");
-
     private static final Component FINAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has fallen");
-
     private static final Component FINAL_CHAT_MESSAGE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has been defeated! " + ChatFormatting.GOLD + ChatFormatting.BOLD + "Congratulations!");
+
+    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonsSlayedCommand.NAME + ChatFormatting.WHITE + "\"");
+
+    private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
+    public static Component getDragonsKilledMessage(int kills)
+    {
+        if (kills == 1)
+        {
+            return Component.literal(ChatFormatting.LIGHT_PURPLE + "You have slayed the Ender Dragon " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " time!");
+        }
+        return Component.literal(ChatFormatting.LIGHT_PURPLE + "You have slayed the Ender Dragon " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " times!");
+    }
 
     public EnderDragonEventHandler()
     {
@@ -79,7 +92,11 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     @Override
     public void onDialogueTick(ServerLevel serverLevel, EnderDragon enderDragon, DialogueSequence sequence, int dialogueTick)
     {
-        TMCEnderDragonShieldRenderer.renderShield(serverLevel, enderDragon, dialogueTick);
+        TMCEnderDragonRenderer.renderShield(serverLevel, enderDragon, dialogueTick);
+        if (sequence == DialogueSequence.STAGE_2 && dialogueTick >= 525)
+        {
+            TMCEnderDragonRenderer.renderWarning(serverLevel, enderDragon, dialogueTick);
+        }
     }
 
     @Override
@@ -108,6 +125,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                 });
             }
             case DEATH -> {
+
                 serverLevel.playSound(null, dragon.getOnPos(), SoundEvents.WITHER_DEATH, SoundSource.MASTER, 2.0f, 1.0F);
                 serverLevel.getPlayers(serverPlayer -> TMCServerUtils.isPlayerInDimension(serverPlayer, ServerLevel.END)).forEach(player ->
                 {
@@ -116,6 +134,32 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     player.connection.send(new ClientboundSetSubtitleTextPacket(FINAL_SUBTITLE));
 
                     player.sendSystemMessage(FINAL_CHAT_MESSAGE);
+                });
+                TMCEnderDragonManager.getAllAttackers(dragon).forEach(uuid ->
+                {
+                    ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(uuid);
+                    if (player == null)
+                    {
+                        return;
+                    }
+                    if (!player.hasAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS))
+                    {
+                        return;
+                    }
+                    player.modifyAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS, kills -> kills + 1);
+                    Integer newKills = player.getAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS);
+                    if (newKills == null)
+                    {
+                        return;
+                    }
+                    if (newKills == 1)
+                    {
+                        player.sendSystemMessage(FIRST_DRAGON_KILL);
+                    } else
+                    {
+                        player.sendSystemMessage(getDragonsKilledMessage(newKills));
+                    }
+                    player.sendSystemMessage(COMMAND_MESSAGE);
                 });
             }
         }

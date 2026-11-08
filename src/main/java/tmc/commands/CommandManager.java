@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import tmc.commands.impl.BroadcastCommand;
 import tmc.commands.impl.DateTimeCommand;
+import tmc.commands.impl.EnderDragonsSlayedCommand;
 import tmc.commands.impl.GameRuleCommand;
 
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ public class CommandManager
         cmds.add(new DateTimeCommand());
         cmds.add(new BroadcastCommand());
         cmds.add(new GameRuleCommand());
+
+        new EnderDragonsSlayedCommand();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, _, _) ->
         {

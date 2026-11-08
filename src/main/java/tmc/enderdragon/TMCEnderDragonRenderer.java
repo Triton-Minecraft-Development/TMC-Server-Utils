@@ -4,10 +4,12 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.boss.enderdragon.DragonFlightHistory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.phys.Vec3;
 
-public class TMCEnderDragonShieldRenderer {
+public class TMCEnderDragonRenderer {
 
     private static final double RADIUS = 9.0D;
     private static final int POINTS = 240;
@@ -58,5 +60,44 @@ public class TMCEnderDragonShieldRenderer {
         }
     }
 
-    private TMCEnderDragonShieldRenderer() {}
+    public static void renderWarning(ServerLevel level, EnderDragon dragon, int ticks)
+    {
+        Vec3 headPos = getWarningHeadPos(dragon, 2);
+
+        if (ticks % 4 != 0)
+        {
+            return;
+        }
+        Vec3 pos = dragon.position();
+        level.sendParticles(ParticleTypes.ANGRY_VILLAGER, headPos.x, headPos.y, headPos.z, 3, 0, 0.2, 0, 0.01);
+        level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 25, 4, 4, 4, 0.2);
+    }
+
+    private static Vec3 getWarningHeadPos(EnderDragon dragon, double verticalOffset)
+    {
+        // 1. Sample 3 ticks back to match client entity lerp and render lag
+        DragonFlightHistory.Sample bodySample = dragon.flightHistory.get(3);
+        DragonFlightHistory.Sample neckSample = dragon.flightHistory.get(8);
+
+        // 2. Estimate the client's interpolated body position (3 ticks behind server position)
+        Vec3 visualBodyPos = dragon.position().subtract(dragon.getDeltaMovement().scale(3.0));
+
+        // 3. Replicate EnderDragon's yaw & neck pitch math (dragon yaw is inverted by 180 degrees)
+        float bodyYawRad = (float) Math.toRadians(bodySample.yRot());
+        float neckPitchRad = (float) Math.toRadians((bodySample.yRot() - neckSample.yRot()) * 10.0);
+
+        // Horizontal reach from dragon center to the head (~6.5 blocks, adjusted for neck pitch)
+        double horizontalReach = 6.5 * Math.cos(neckPitchRad);
+
+        // EnderDragon faces opposite to standard entity yaw: +sin(yaw) for X, -cos(yaw) for Z
+        double headX = visualBodyPos.x + Math.sin(bodyYawRad) * horizontalReach;
+        double headZ = visualBodyPos.z - Math.cos(bodyYawRad) * horizontalReach;
+
+        // 4. Calculate Y position above the head hitbox
+        double headY = dragon.head.getY() + dragon.head.getBbHeight() + verticalOffset;
+
+        return new Vec3(headX, headY, headZ);
+    }
+
+    private TMCEnderDragonRenderer() {}
 }

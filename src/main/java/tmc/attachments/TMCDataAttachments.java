@@ -4,7 +4,10 @@ import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
+import tmc.codec.AttackerHistory;
 import tmc.enderdragon.EnderDragonStage;
+
+import java.util.*;
 
 public class TMCDataAttachments {
 
@@ -64,12 +67,31 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Ender Dragon data for tracking time in ticks for the dialogue phase
+     * Ender Dragon data for tracking time in ticks for the dialogue phases
      */
     public static final AttachmentType<Integer> ENDER_DRAGON_DIALOGUE_TIMER = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_dialogue_timer"),
             integerBuilder -> integerBuilder
                     .initializer(() -> 0)
+                    .persistent(Codec.INT)
+    );
+
+    /**
+     * Attachment used for tracking UUIDs of entities that attacked this one.
+     * Does not persist on death.
+     */
+    public static final AttachmentType<AttackerHistory> LOGGED_ATTACKERS = AttachmentRegistry.create(
+            TMCServerUtils.of("logged_attackers"),
+            attackerHistoryBuilder -> attackerHistoryBuilder
+                    .initializer(AttackerHistory::new)
+                    .persistent(AttackerHistory.CODEC)
+    );
+
+    public static final AttachmentType<Integer> PLAYER_ENDER_DRAGON_KILLS = AttachmentRegistry.create(
+            TMCServerUtils.of("player_ender_dragon_kills"),
+            integerBuilder -> integerBuilder
+                    .initializer(() -> 0)
+                    .copyOnDeath()
                     .persistent(Codec.INT)
     );
 

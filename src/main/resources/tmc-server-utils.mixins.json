@@ -7,7 +7,8 @@
     "ServerExplosionMixin",
     "entity.enderdragon.EnderDragonMixin",
     "entity.enderdragon.EnderDragonPhaseMixin",
-    "entity.mob.MobTickMixin"
+    "entity.mob.MobTickMixin",
+    "entity.serverplayer.ServerPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

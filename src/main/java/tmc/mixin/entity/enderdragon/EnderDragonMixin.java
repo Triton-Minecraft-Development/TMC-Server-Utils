@@ -9,14 +9,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.AttackerHistory;
 import tmc.enderdragon.EnderDragonStage;
 import tmc.enderdragon.TMCEnderDragonManager;
 
@@ -44,12 +45,17 @@ public abstract class EnderDragonMixin {
         {
             return;
         }
+        if (TMCEnderDragonManager.hasAttachments(dragon))
+        {
+            return;
+        }
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, EnderDragonStage.VANILLA.ordinal());
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING, false);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER, 0);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
         dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER, 0);
+        dragon.setAttached(TMCDataAttachments.LOGGED_ATTACKERS, new AttackerHistory());
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",
@@ -75,6 +81,22 @@ public abstract class EnderDragonMixin {
                 }
             }
             cir.cancel();
+        } else
+        {
+            Entity entity = source.getEntity();
+            if (entity != null)
+            {
+                if (entity instanceof ServerPlayer player)
+                {
+                    TMCEnderDragonManager.logPlayerAttacker(dragon, player);
+                } else if (entity instanceof Arrow arrow)
+                {
+                    if (arrow.getOwner() != null && arrow.getOwner() instanceof ServerPlayer player)
+                    {
+                        TMCEnderDragonManager.logPlayerAttacker(dragon, player);
+                    }
+                }
+            }
         }
     }
 

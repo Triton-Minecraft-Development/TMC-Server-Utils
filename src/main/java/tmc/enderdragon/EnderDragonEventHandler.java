@@ -2,7 +2,6 @@ package tmc.enderdragon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -19,7 +18,8 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.commands.impl.EnderDragonsSlayedCommand;
+import tmc.codec.enderdragon.PlayerEnderDragonStats;
+import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
 
 /**
@@ -44,17 +44,9 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     private static final Component FINAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has fallen");
     private static final Component FINAL_CHAT_MESSAGE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has been defeated! " + ChatFormatting.GOLD + ChatFormatting.BOLD + "Congratulations!");
 
-    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonsSlayedCommand.NAME + ChatFormatting.WHITE + "\"");
+    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
-    public static Component getDragonsKilledMessage(int kills)
-    {
-        if (kills == 1)
-        {
-            return Component.literal(ChatFormatting.LIGHT_PURPLE + "You have slayed the Ender Dragon " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " time!");
-        }
-        return Component.literal(ChatFormatting.LIGHT_PURPLE + "You have slayed the Ender Dragon " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " times!");
-    }
 
     public EnderDragonEventHandler()
     {
@@ -134,30 +126,33 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     player.connection.send(new ClientboundSetSubtitleTextPacket(FINAL_SUBTITLE));
 
                     player.sendSystemMessage(FINAL_CHAT_MESSAGE);
+
+                    EnderDragonLeaderboardManager.printFightLeaderboard(dragon, serverLevel, player);
                 });
-                TMCEnderDragonManager.getAllAttackers(dragon).forEach(uuid ->
+                TMCEnderDragonManager.getAllAttackers(dragon).forEach((uuid, damage) ->
                 {
                     ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(uuid);
                     if (player == null)
                     {
                         return;
                     }
-                    if (!player.hasAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS))
+                    if (!player.hasAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS))
                     {
                         return;
                     }
-                    player.modifyAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS, kills -> kills + 1);
-                    Integer newKills = player.getAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS);
-                    if (newKills == null)
+                    player.modifyAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS, stats -> stats.updateKills().updateBestDamage(damage));
+                    PlayerEnderDragonStats stats = player.getAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS);
+                    if (stats == null)
                     {
                         return;
                     }
+                    int newKills = stats.getKills();
                     if (newKills == 1)
                     {
                         player.sendSystemMessage(FIRST_DRAGON_KILL);
                     } else
                     {
-                        player.sendSystemMessage(getDragonsKilledMessage(newKills));
+                        player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(newKills));
                     }
                     player.sendSystemMessage(COMMAND_MESSAGE);
                 });

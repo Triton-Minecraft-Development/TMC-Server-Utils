@@ -8,6 +8,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -20,6 +21,7 @@ import tmc.damagetypes.TMCDamageTypes;
 import tmc.enderdragon.EnderDragonEventHandler;
 import tmc.enderdragon.TMCEnderDragonManager;
 
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class TMCServerUtils implements ModInitializer
@@ -44,6 +46,14 @@ public class TMCServerUtils implements ModInitializer
     {
         Level level = player.level();
         return level.equals(level.getServer().getLevel(dimensionKey));
+    }
+
+    public static String getUsernameFromUUID(ServerLevel serverLevel, UUID uuid)
+    {
+        return serverLevel.getServer().services().nameToIdCache()
+                .get(uuid)
+                .map(NameAndId::name)
+                .orElse("Unknown Player");
     }
 
     @Override

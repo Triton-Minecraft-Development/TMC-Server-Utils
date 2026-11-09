@@ -31,7 +31,7 @@ import static tmc.enderdragon.TMCEnderDragonManager.createEnderDragonDialogueCom
  */
 public final class ClosingDialoguePerchPhase extends AbstractDragonSittingPhase {
 
-    private static final int DURATION_TICKS = 195;
+    private static final int DURATION_TICKS = 235;
 
     private static final Map<Integer, Component> ENDING_DIALOGUE = Map.ofEntries(
             Map.entry(0, createEnderDragonDialogueComponent("...So. One of you found the final blow.")),

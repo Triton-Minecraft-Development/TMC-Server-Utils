@@ -57,7 +57,7 @@ public class TMCEnderDragonManager {
                 enderDragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS);
     }
 
-    public static void logPlayerAttacker(EnderDragon dragon, ServerPlayer player)
+    public static void logPlayerAttacker(EnderDragon dragon, ServerPlayer player, float damage)
     {
         if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
         {
@@ -65,23 +65,23 @@ public class TMCEnderDragonManager {
         }
         dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistory ->
         {
-            attackerHistory.addAttacker(player.getUUID());
+            attackerHistory.updateAttacker(player.getUUID(), damage);
             return attackerHistory;
         });
     }
 
-    public static HashSet<UUID> getAllAttackers(EnderDragon dragon)
+    public static HashMap<UUID, Float> getAllAttackers(EnderDragon dragon)
     {
         if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
         {
-            return new HashSet<>();
+            return new HashMap<>();
         }
         AttackerHistory attackerHistory = dragon.getAttached(TMCDataAttachments.LOGGED_ATTACKERS);
         if (attackerHistory == null)
         {
-            return new HashSet<>();
+            return new HashMap<>();
         }
-        return new HashSet<>(attackerHistory.attackerUuids());
+        return new HashMap<>(attackerHistory.attackerUuids());
     }
 
     /**

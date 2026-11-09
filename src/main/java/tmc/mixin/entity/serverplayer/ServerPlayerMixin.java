@@ -19,10 +19,6 @@ public abstract class ServerPlayerMixin {
     {
         ServerPlayer player = (ServerPlayer) (Object) this;
 
-        if (player.hasAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS))
-        {
-            return;
-        }
-        player.setAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_KILLS, 0);
+        player.getAttachedOrCreate(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS);
     }
 }

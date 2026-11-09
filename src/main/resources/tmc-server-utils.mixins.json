@@ -6,7 +6,6 @@
     "entity.enderdragon.EnderDragonMixin",
     "entity.enderdragon.EnderDragonPhaseMixin",
     "entity.mob.MobTickMixin",
-    "entity.serverplayer.ServerPlayerMixin",
     "gamerules.exposions.AbstractMinecartMixin",
     "gamerules.exposions.EntityMixin",
     "gamerules.exposions.ServerExplosionMixin",

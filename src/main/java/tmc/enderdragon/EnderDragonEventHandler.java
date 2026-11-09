@@ -18,7 +18,7 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.enderdragon.PlayerEnderDragonStats;
+import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
 
@@ -127,7 +127,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
 
                     player.sendSystemMessage(FINAL_CHAT_MESSAGE);
 
-                    EnderDragonLeaderboardManager.printFightLeaderboard(dragon, serverLevel, player);
                 });
                 TMCEnderDragonManager.getAllAttackers(dragon).forEach((uuid, damage) ->
                 {
@@ -136,17 +135,12 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     {
                         return;
                     }
-                    if (!player.hasAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS))
-                    {
-                        return;
-                    }
-                    player.modifyAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS, stats -> stats.updateKills().updateBestDamage(damage));
-                    PlayerEnderDragonStats stats = player.getAttached(TMCDataAttachments.PLAYER_ENDER_DRAGON_STATS);
-                    if (stats == null)
-                    {
-                        return;
-                    }
-                    int newKills = stats.getKills();
+                    EnderDragonLeaderboard.update(serverLevel, player, damage);
+                    EnderDragonLeaderboardManager.printFightLeaderboard(dragon, serverLevel, player);
+                    EnderDragonLeaderboard leaderboard = serverLevel.getServer().overworld().getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+
+                    EnderDragonLeaderboard.PlayerStats stats = leaderboard.getPlayerStats(player);
+                    int newKills = stats.slays();
                     if (newKills == 1)
                     {
                         player.sendSystemMessage(FIRST_DRAGON_KILL);
@@ -154,7 +148,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     {
                         player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(newKills));
                     }
-                    player.sendSystemMessage(COMMAND_MESSAGE);
                 });
             }
         }

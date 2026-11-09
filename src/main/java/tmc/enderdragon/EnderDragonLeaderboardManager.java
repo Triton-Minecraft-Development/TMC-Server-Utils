@@ -13,20 +13,22 @@ import tmc.codec.AttackerHistory;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Leaderboard management for Ender Dragon
+ */
 public class EnderDragonLeaderboardManager {
 
     private static final int TOP_N = 10;
     private static final DecimalFormat DAMAGE_FORMAT = new DecimalFormat("#,##0.00");
 
     private static final Component DIVIDER = Component.literal(ChatFormatting.GREEN + "" + ChatFormatting.BOLD + "---------------------------------------------");
-    private static final Component DAMAGE_LEADERBOARD_HEADER = Component.literal(ChatFormatting.BOLD + "          " + ChatFormatting.LIGHT_PURPLE + "Top 10 All-Time Ender Dragon Damage     ");
-    private static final Component FIGHT_LEADERBOARD_HEADER = Component.literal("");
-    private static final Component CONTRIBUTION_LEADERBOARD_HEADER = Component.literal(ChatFormatting.BOLD + "          " + ChatFormatting.LIGHT_PURPLE + "Top 10 All-Time Ender Dragon Slayers     ");
+    private static final Component DAMAGE_LEADERBOARD_HEADER = Component.literal(ChatFormatting.BOLD + "          " + ChatFormatting.LIGHT_PURPLE + "Top 10 All-Time Ender Dragon Damage Dealers     ");
+    private static final Component FIGHT_LEADERBOARD_HEADER = Component.literal(ChatFormatting.BOLD + "          " + ChatFormatting.LIGHT_PURPLE + "Top 10 Ender Dragon Damage Dealers     ");
+    private static final Component SLAYER_LEADERBOARD_HEADER = Component.literal(ChatFormatting.BOLD + "          " + ChatFormatting.LIGHT_PURPLE + "Top 10 All-Time Ender Dragon Slayers     ");
 
     public static Component getDragonsKilledMessage(int kills)
     {
@@ -42,18 +44,23 @@ public class EnderDragonLeaderboardManager {
         return Component.literal(ChatFormatting.LIGHT_PURPLE + "You have dealt " + ChatFormatting.GOLD + DAMAGE_FORMAT.format(damage) + ChatFormatting.LIGHT_PURPLE + " damage across " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " Ender Dragons!");
     }
 
+    public static Component getBestDamageMessage(float damage)
+    {
+        return Component.literal(ChatFormatting.LIGHT_PURPLE + "Highest damage to an Ender Dragon: " + ChatFormatting.GOLD + DAMAGE_FORMAT.format(damage) + ChatFormatting.LIGHT_PURPLE + " damage.");
+    }
+
     private static Component getSelfDamageComponent(float damage, int position)
     {
         return Component.literal(ChatFormatting.GRAY + "Your damage: " + DAMAGE_FORMAT.format(damage) + " damage (Position: #" + position + ")");
     }
 
-    private static Component getSelfContributionComponent(int contributions, int position)
+    private static Component getSelfSlayComponent(int slays, int position)
     {
-        if (contributions == 1)
+        if (slays == 1)
         {
-            return Component.literal(ChatFormatting.GRAY + "Your contributions: " + contributions + " contribution (Position: #" + position + ")");
+            return Component.literal(ChatFormatting.GRAY + "Your slays: " + slays + " slay (Position: #" + position + ")");
         }
-        return Component.literal(ChatFormatting.GRAY + "Your contributions: " + contributions + " contributions (Position: #" + position + ")");
+        return Component.literal(ChatFormatting.GRAY + "Your slays: " + slays + " slays (Position: #" + position + ")");
     }
 
     private static Component getDamageLeaderboardEntryComponent(String username, float damage, int position)
@@ -72,7 +79,7 @@ public class EnderDragonLeaderboardManager {
         return Component.literal("#" + position + ": " + username + " - " + DAMAGE_FORMAT.format(damage) + " damage").withColor(color);
     }
 
-    private static Component getContributionLeaderboardEntryComponent(String username, int contributions, int position)
+    private static Component getSlayLeaderboardEntryComponent(String username, int slays, int position)
     {
         TextColor color = switch (position)
         {
@@ -82,14 +89,19 @@ public class EnderDragonLeaderboardManager {
             default -> TextColor.GRAY;
         };
 
-        String contributionStr = contributions == 1 ? " contribution" : " contributions";
+        String slayStr = slays == 1 ? " slay" : " slays";
         if (position <= 3)
         {
-            return Component.literal("#" + position + ": " + username + " - " + contributions + contributionStr).withColor(color).withStyle(ChatFormatting.BOLD);
+            return Component.literal("#" + position + ": " + username + " - " + slays + slayStr).withColor(color).withStyle(ChatFormatting.BOLD);
         }
-        return Component.literal("#" + position + ": " + username + " - " + contributions + contributionStr).withColor(color);
+        return Component.literal("#" + position + ": " + username + " - " + slays + slayStr).withColor(color);
     }
 
+    /**
+     * Outputs the lifetime damage to the Ender Dragon leaderboard to the specified player
+     * @param serverLevel The {@linkplain ServerLevel serverl level} the player is present on
+     * @param serverPlayer The {@linkplain ServerPlayer player} to output towards
+     */
     public static void printLifetimeDamageLeaderboard(ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();
@@ -132,6 +144,12 @@ public class EnderDragonLeaderboardManager {
         serverPlayer.sendSystemMessage(DIVIDER);
     }
 
+    /**
+     * Outputs the lifetime damage to the Ender Dragon leaderboard to the given {@linkplain CommandSourceStack command source stack}.
+     * Will output to the player if the command was executed by a player.
+     * @param serverLevel The {@linkplain ServerLevel server level} the command takes place on
+     * @param sourceStack The {@linkplain CommandSourceStack source stack} of the command
+     */
     public static void printLifetimeDamageLeaderboard(ServerLevel serverLevel, CommandSourceStack sourceStack)
     {
         if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer serverPlayer)
@@ -164,7 +182,12 @@ public class EnderDragonLeaderboardManager {
         sourceStack.sendSystemMessage(DIVIDER);
     }
 
-    public static void printContributionsLeaderboard(ServerLevel serverLevel, ServerPlayer serverPlayer)
+    /**
+     * Outputs the total Slayed Ender Dragons leaderboard to the specified player
+     * @param serverLevel The {@linkplain ServerLevel server level} the player is present on
+     * @param serverPlayer The {@linkplain ServerPlayer server player} to output towards
+     */
+    public static void printSlayedLeaderboard(ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();
         EnderDragonLeaderboard leaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
@@ -174,7 +197,7 @@ public class EnderDragonLeaderboardManager {
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);
-        serverPlayer.sendSystemMessage(CONTRIBUTION_LEADERBOARD_HEADER);
+        serverPlayer.sendSystemMessage(SLAYER_LEADERBOARD_HEADER);
         serverPlayer.sendSystemMessage(Component.empty());
 
         int selfRank = 0;
@@ -185,7 +208,7 @@ public class EnderDragonLeaderboardManager {
             if (rank < TOP_N)
             {
                 String username = TMCServerUtils.getUsernameFromUUID(overworld, entry.getKey());
-                serverPlayer.sendSystemMessage(getContributionLeaderboardEntryComponent(username, entry.getValue(), rank + 1));
+                serverPlayer.sendSystemMessage(getSlayLeaderboardEntryComponent(username, entry.getValue(), rank + 1));
             }
             if (entry.getKey().equals(serverPlayer.getUUID()))
             {
@@ -201,17 +224,22 @@ public class EnderDragonLeaderboardManager {
 
         serverPlayer.sendSystemMessage(Component.empty());
 
-        int contributions = leaderboard.dragonsSlayed().getOrDefault(serverPlayer.getUUID(), 0);
-        serverPlayer.sendSystemMessage(getSelfContributionComponent(contributions, selfRank));
+        int slays = leaderboard.dragonsSlayed().getOrDefault(serverPlayer.getUUID(), 0);
+        serverPlayer.sendSystemMessage(getSelfSlayComponent(slays, selfRank));
         serverPlayer.sendSystemMessage(Component.empty());
         serverPlayer.sendSystemMessage(DIVIDER);
     }
 
-    public static void printContributionsLeaderboard(ServerLevel serverLevel, CommandSourceStack sourceStack)
+    /**
+     * Outputs the total Slayed Ender Dragons leaderboard to the specified {@linkplain CommandSourceStack command source stack}
+     * @param serverLevel The {@linkplain ServerLevel server level} the command takes place on
+     * @param sourceStack The {@linkplain CommandSourceStack source stack} of the command
+     */
+    public static void printSlayedLeaderboard(ServerLevel serverLevel, CommandSourceStack sourceStack)
     {
         if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer serverPlayer)
         {
-            printContributionsLeaderboard(serverLevel, serverPlayer);
+            printSlayedLeaderboard(serverLevel, serverPlayer);
             return;
         }
 
@@ -219,7 +247,7 @@ public class EnderDragonLeaderboardManager {
         EnderDragonLeaderboard leaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
 
         sourceStack.sendSystemMessage(DIVIDER);
-        sourceStack.sendSystemMessage(CONTRIBUTION_LEADERBOARD_HEADER);
+        sourceStack.sendSystemMessage(SLAYER_LEADERBOARD_HEADER);
         sourceStack.sendSystemMessage(Component.empty());
 
         List<Map.Entry<UUID, Integer>> topN = leaderboard.dragonsSlayed().entrySet().stream()
@@ -232,7 +260,7 @@ public class EnderDragonLeaderboardManager {
         {
             String username = TMCServerUtils.getUsernameFromUUID(overworld, entry.getKey());
 
-            sourceStack.sendSystemMessage(getContributionLeaderboardEntryComponent(username, entry.getValue(), rank));
+            sourceStack.sendSystemMessage(getSlayLeaderboardEntryComponent(username, entry.getValue(), rank));
             rank++;
         }
 
@@ -240,6 +268,13 @@ public class EnderDragonLeaderboardManager {
         sourceStack.sendSystemMessage(DIVIDER);
     }
 
+    /**
+     * Outputs the Ender Dragon fight results leaderboard. Should only be called when
+     * the Ender Dragon is defeated
+     * @param dragon The {@linkplain EnderDragon Ender Dragon} being defeated
+     * @param serverLevel The {@linkplain ServerLevel server level}
+     * @param serverPlayer the {@linkplain ServerPlayer player} to output the leaderboard to
+     */
     public static void printFightLeaderboard(EnderDragon dragon, ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();

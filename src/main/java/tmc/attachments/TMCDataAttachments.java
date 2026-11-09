@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.codec.enderdragon.PlayerEnderDragonStats;
 import tmc.enderdragon.EnderDragonStage;
 
 public class TMCDataAttachments {
@@ -84,26 +83,6 @@ public class TMCDataAttachments {
             attackerHistoryBuilder -> attackerHistoryBuilder
                     .initializer(AttackerHistory::new)
                     .persistent(AttackerHistory.CODEC)
-    );
-
-    /**
-     * Attachment used for tracking # of Ender Dragon kills a player has
-     */
-    @Deprecated
-    public static final AttachmentType<Integer> PLAYER_ENDER_DRAGON_KILLS = AttachmentRegistry.create(
-            TMCServerUtils.of("player_ender_dragon_kills"),
-            integerBuilder -> integerBuilder
-                    .initializer(() -> 0)
-                    .copyOnDeath()
-                    .persistent(Codec.INT)
-    );
-
-    public static final AttachmentType<PlayerEnderDragonStats> PLAYER_ENDER_DRAGON_STATS = AttachmentRegistry.create(
-            TMCServerUtils.of("player_ender_dragon_stats"),
-            builder -> builder
-                    .initializer(PlayerEnderDragonStats::new)
-                    .copyOnDeath()
-                    .persistent(PlayerEnderDragonStats.CODEC)
     );
 
     /**

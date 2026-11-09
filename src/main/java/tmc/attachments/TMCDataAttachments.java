@@ -5,9 +5,8 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
+import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.enderdragon.EnderDragonStage;
-
-import java.util.*;
 
 public class TMCDataAttachments {
 
@@ -87,14 +86,13 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking # of Ender Dragon kills a player has
+     * Attachment used for tracking leaderboard stats for the Ender Dragon
      */
-    public static final AttachmentType<Integer> PLAYER_ENDER_DRAGON_KILLS = AttachmentRegistry.create(
-            TMCServerUtils.of("player_ender_dragon_kills"),
-            integerBuilder -> integerBuilder
-                    .initializer(() -> 0)
-                    .copyOnDeath()
-                    .persistent(Codec.INT)
+    public static final AttachmentType<EnderDragonLeaderboard> SERVER_ENDER_DRAGON_LEADERBOARD = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_leaderboard"),
+            enderDragonLeaderboardBuilder -> enderDragonLeaderboardBuilder
+                    .initializer(EnderDragonLeaderboard::new)
+                    .persistent(EnderDragonLeaderboard.CODEC)
     );
 
     public static void initialize()

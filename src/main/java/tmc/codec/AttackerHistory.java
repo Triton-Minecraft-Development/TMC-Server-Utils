@@ -4,28 +4,37 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
-public record AttackerHistory(HashSet<UUID> attackerUuids) {
+public record AttackerHistory(HashMap<UUID, Float> attackerUuids) {
 
     public static final Codec<AttackerHistory> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
-                    UUIDUtil.CODEC.listOf()
-                            .xmap(HashSet::new, List::copyOf)
-                            .fieldOf("attackers")
+                    Codec.unboundedMap(UUIDUtil.CODEC, Codec.FLOAT)
+                            .xmap(HashMap::new, map -> map)
+                            .fieldOf("attacker_history")
                             .forGetter(AttackerHistory::attackerUuids)
             ).apply(instance, AttackerHistory::new)
     );
 
     public AttackerHistory()
     {
-        this(new HashSet<>());
+        this(new HashMap<>());
     }
 
-    public void addAttacker(UUID uuid)
+    public void updateAttacker(UUID uuid, float damage)
     {
-        this.attackerUuids.add(uuid);
+        if (this.attackerUuids.containsKey(uuid) && this.attackerUuids.get(uuid) != null)
+        {
+            this.attackerUuids.compute(uuid, (_, storedDamage) -> {
+                if (storedDamage != null)
+                {
+                    return storedDamage + damage;
+                }
+                return null;
+            });
+            return;
+        }
+        this.attackerUuids.put(uuid, damage);
     }
 }

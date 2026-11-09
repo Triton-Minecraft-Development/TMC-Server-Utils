@@ -34,10 +34,6 @@ import tmc.enderdragon.TMCEnderDragonManager;
 @Mixin(EnderDragon.class)
 public abstract class EnderDragonMixin {
 
-    /**
-     * Deprecated since data attachments have initializers, so this may not be needed
-     */
-    @Deprecated
     @Inject(method = "<init>", at = @At("TAIL"))
     private void initTmcData(EntityType<? extends EnderDragon> type, Level level, CallbackInfo ci)
     {
@@ -90,12 +86,12 @@ public abstract class EnderDragonMixin {
             {
                 if (entity instanceof ServerPlayer player)
                 {
-                    TMCEnderDragonManager.logPlayerAttacker(dragon, player);
+                    TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
                 } else if (entity instanceof Arrow arrow)
                 {
                     if (arrow.getOwner() != null && arrow.getOwner() instanceof ServerPlayer player)
                     {
-                        TMCEnderDragonManager.logPlayerAttacker(dragon, player);
+                        TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
                     }
                 }
             }

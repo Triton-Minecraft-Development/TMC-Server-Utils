@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
+import tmc.codec.enderdragon.DiveBombData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.enderdragon.EnderDragonStage;
 
@@ -86,6 +87,16 @@ public class TMCDataAttachments {
     );
 
     /**
+     * Attachment used for tracking data during the dive bomb phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<DiveBombData> ENDER_DRAGON_DIVE_BOMB_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_dive_bomb_data"),
+            builder -> builder
+                    .initializer(DiveBombData::new)
+                    .persistent(DiveBombData.CODEC)
+    );
+
+    /**
      * Attachment used for tracking leaderboard stats for the Ender Dragon
      */
     public static final AttachmentType<EnderDragonLeaderboard> SERVER_ENDER_DRAGON_LEADERBOARD = AttachmentRegistry.create(
@@ -95,8 +106,5 @@ public class TMCDataAttachments {
                     .persistent(EnderDragonLeaderboard.CODEC)
     );
 
-    public static void initialize()
-    {
-
-    }
+    public static void initialize() {}
 }

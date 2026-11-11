@@ -18,14 +18,18 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DiveBombData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
+import tmc.util.PlayerClusterScanner;
 
 /**
  * Event handlers for Ender Dragon
  */
-public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath, TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd {
+public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
+        TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
+        TMCEnderDragonEvents.PhaseTick {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -44,7 +48,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     private static final Component FINAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has fallen");
     private static final Component FINAL_CHAT_MESSAGE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has been defeated! " + ChatFormatting.GOLD + ChatFormatting.BOLD + "Congratulations!");
 
-    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
+    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your stats against the Ender Dragon using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
 
@@ -54,6 +58,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         TMCEnderDragonEvents.STAGE_TRANSITION.register(this);
         TMCEnderDragonEvents.ON_DIALOGUE_TICK.register(this);
         TMCEnderDragonEvents.ON_DIALOGUE_END.register(this);
+        TMCEnderDragonEvents.ON_STAGE_TICK.register(this);
     }
 
     @Override
@@ -148,8 +153,36 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     {
                         player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(newKills));
                     }
+                    player.sendSystemMessage(COMMAND_MESSAGE);
                 });
             }
+        }
+    }
+
+    @Override
+    public void onStageTick(ServerLevel serverLevel, EnderDragon enderDragon, EnderDragonStage stage, int ticks)
+    {
+        if (stage != EnderDragonStage.STAGE_2)
+        {
+            return;
+        }
+
+        if (enderDragon.getPhaseManager().getCurrentPhase().getPhase() == EnderDragonPhase.HOLDING_PATTERN)
+        {
+            DiveBombData diveBombData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
+            if (!diveBombData.isCooldownReady(ticks))
+            {
+                return;
+            }
+            if (serverLevel.getRandom().nextFloat() >= 0.2f)
+            {
+                return;
+            }
+            if (PlayerClusterScanner.findDiveTarget(serverLevel, PlayerClusterScanner.SCAN_RADIUS_ENDER_DRAGON, PlayerClusterScanner.EPS_ENDER_DRAGON_DIVE, PlayerClusterScanner.MIN_PTS_ENDER_DRAGON_DIVE, PlayerClusterScanner.FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE).isEmpty())
+            {
+                return;
+            }
+            enderDragon.getPhaseManager().setPhase(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE);
         }
     }
 }

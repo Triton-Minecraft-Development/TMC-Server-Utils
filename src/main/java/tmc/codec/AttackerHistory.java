@@ -10,7 +10,7 @@ public record AttackerHistory(HashMap<UUID, Float> attackerUuids) {
 
     public static final Codec<AttackerHistory> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
-                    Codec.unboundedMap(UUIDUtil.CODEC, Codec.FLOAT)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.FLOAT)
                             .xmap(HashMap::new, map -> map)
                             .fieldOf("attacker_history")
                             .forGetter(AttackerHistory::attackerUuids)

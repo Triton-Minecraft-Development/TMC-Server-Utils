@@ -12,14 +12,18 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.enderdragon.EnderDragonStage;
 import tmc.enderdragon.TMCEnderDragonManager;
+import tmc.enderdragon.TMCEnderDragonRenderer;
 
 /**
  * Mixin for adding Data Attachments to the Ender Dragon
@@ -33,6 +37,9 @@ import tmc.enderdragon.TMCEnderDragonManager;
  */
 @Mixin(EnderDragon.class)
 public abstract class EnderDragonMixin {
+
+    @Unique
+    private static final float MAX_DAMAGE_PER_HIT = 50;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void initTmcData(EntityType<? extends EnderDragon> type, Level level, CallbackInfo ci)
@@ -96,6 +103,26 @@ public abstract class EnderDragonMixin {
                 }
             }
         }
+    }
+
+    /**
+     * Halves the amount of damage and applies a damage cap to the Ender Dragon. This is only
+     * active during {@linkplain EnderDragonStage#STAGE_2 stage 2}
+     * @param damage The original amount of damage received
+     * @param level The {@linkplain ServerLevel server level} the Ender dragon present
+     * @param source The damage source of the inflicted damage
+     * @return The adjusted amount of damage the dragon will receive.
+     */
+    @ModifyVariable(method = "reallyHurt", at = @At("HEAD"), argsOnly = true, name = "damage")
+    private float onReallyHurt(float damage, ServerLevel level, DamageSource source)
+    {
+        EnderDragon dragon = (EnderDragon) (Object) this;
+        EnderDragonStage stage = TMCEnderDragonManager.getDragonStage(dragon);
+        if (stage == EnderDragonStage.STAGE_2)
+        {
+            return Math.min(damage / 2, MAX_DAMAGE_PER_HIT);
+        }
+        return Math.min(damage, MAX_DAMAGE_PER_HIT);
     }
 
 }

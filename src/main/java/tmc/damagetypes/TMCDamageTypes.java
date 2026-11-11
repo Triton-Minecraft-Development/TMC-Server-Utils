@@ -23,7 +23,7 @@ public class TMCDamageTypes {
         );
     }
 
-    public static DamageSource getDamageSource(ResourceKey<DamageType> damageTypeResourceKey, ServerLevel serverLevel, ServerPlayer victim, LivingEntity attacker)
+    public static DamageSource getDamageSource(ResourceKey<DamageType> damageTypeResourceKey, ServerLevel serverLevel, LivingEntity victim, LivingEntity attacker)
     {
         return new DamageSource(
                 serverLevel.registryAccess()

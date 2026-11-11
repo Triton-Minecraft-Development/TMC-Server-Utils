@@ -44,7 +44,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     private static final Component FINAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has fallen");
     private static final Component FINAL_CHAT_MESSAGE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has been defeated! " + ChatFormatting.GOLD + ChatFormatting.BOLD + "Congratulations!");
 
-    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
+    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your stats against the Ender Dragon using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
 
@@ -148,6 +148,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     {
                         player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(newKills));
                     }
+                    player.sendSystemMessage(COMMAND_MESSAGE);
                 });
             }
         }

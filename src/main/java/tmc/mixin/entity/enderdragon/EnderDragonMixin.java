@@ -12,7 +12,6 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,10 +19,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.AttackerHistory;
 import tmc.enderdragon.EnderDragonStage;
 import tmc.enderdragon.TMCEnderDragonManager;
-import tmc.enderdragon.TMCEnderDragonRenderer;
 
 /**
  * Mixin for adding Data Attachments to the Ender Dragon
@@ -33,6 +30,7 @@ import tmc.enderdragon.TMCEnderDragonRenderer;
  * @see TMCDataAttachments#ENDER_DRAGON_STAGE_2_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DEATH_STAGE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_TIMER
+ * @see TMCDataAttachments#ENDER_DRAGON_DIVE_BOMB_DATA
  * @see TMCDataAttachments#LOGGED_ATTACKERS
  */
 @Mixin(EnderDragon.class)
@@ -50,17 +48,15 @@ public abstract class EnderDragonMixin {
         {
             return;
         }
-        if (TMCEnderDragonManager.hasAttachments(dragon))
-        {
-            return;
-        }
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA, EnderDragonStage.VANILLA.ordinal());
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING, false);
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER, 0);
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
-        dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER, 0);
-        dragon.setAttached(TMCDataAttachments.LOGGED_ATTACKERS, new AttackerHistory());
+
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER);
+        dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",
@@ -86,22 +82,6 @@ public abstract class EnderDragonMixin {
                 }
             }
             cir.cancel();
-        } else
-        {
-            Entity entity = source.getEntity();
-            if (entity != null)
-            {
-                if (entity instanceof ServerPlayer player)
-                {
-                    TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
-                } else if (entity instanceof Arrow arrow)
-                {
-                    if (arrow.getOwner() != null && arrow.getOwner() instanceof ServerPlayer player)
-                    {
-                        TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
-                    }
-                }
-            }
         }
     }
 
@@ -116,13 +96,35 @@ public abstract class EnderDragonMixin {
     @ModifyVariable(method = "reallyHurt", at = @At("HEAD"), argsOnly = true, name = "damage")
     private float onReallyHurt(float damage, ServerLevel level, DamageSource source)
     {
+        if (damage <= 0f)
+        {
+            return damage;
+        }
         EnderDragon dragon = (EnderDragon) (Object) this;
         EnderDragonStage stage = TMCEnderDragonManager.getDragonStage(dragon);
         if (stage == EnderDragonStage.STAGE_2)
         {
-            return Math.min(damage / 2, MAX_DAMAGE_PER_HIT);
+            damage = Math.min(damage / 2, MAX_DAMAGE_PER_HIT);
+        } else
+        {
+            damage = Math.min(damage, MAX_DAMAGE_PER_HIT);
         }
-        return Math.min(damage, MAX_DAMAGE_PER_HIT);
+
+        Entity entity = source.getEntity();
+        if (entity != null)
+        {
+            if (entity instanceof ServerPlayer player)
+            {
+                TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
+            } else if (entity instanceof Arrow arrow)
+            {
+                if (arrow.getOwner() != null && arrow.getOwner() instanceof ServerPlayer player)
+                {
+                    TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
+                }
+            }
+        }
+        return damage;
     }
 
 }

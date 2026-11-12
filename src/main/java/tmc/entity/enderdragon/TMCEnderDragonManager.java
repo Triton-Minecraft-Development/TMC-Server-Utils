@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.ChatFormatting;
@@ -16,9 +16,10 @@ import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.damagetypes.TMCDamageTypes;
-import tmc.enderdragon.phase.ClosingDialoguePerchPhase;
-import tmc.enderdragon.phase.DiveBombPhase;
-import tmc.enderdragon.phase.OpeningDialoguePerchPhase;
+import tmc.entity.enderdragon.phase.ClosingDialoguePerchPhase;
+import tmc.entity.enderdragon.phase.DiveBombPhase;
+import tmc.entity.enderdragon.phase.FireballBarragePhase;
+import tmc.entity.enderdragon.phase.OpeningDialoguePerchPhase;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.HashMap;
@@ -331,6 +332,8 @@ public class TMCEnderDragonManager {
          * Phase the Ender Dragon enters when diving into players
          */
         public static final EnderDragonPhase<DiveBombPhase> DIVE_BOMB_PHASE = create(DiveBombPhase.class, "DiveBomb", EnderDragonPhase.CHARGING_PLAYER);
+
+        public static final EnderDragonPhase<FireballBarragePhase> FIREBALL_BARRAGE_PHASE = create(FireballBarragePhase.class, "FireballBarrage", EnderDragonPhase.HOVERING);
 
         /**
          * Registers a new {@linkplain EnderDragonPhase Ender Dragon Phase}

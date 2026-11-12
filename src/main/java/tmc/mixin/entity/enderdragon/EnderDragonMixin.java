@@ -19,8 +19,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.attachments.TMCDataAttachments;
-import tmc.enderdragon.EnderDragonStage;
-import tmc.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.EnderDragonStage;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 /**
  * Mixin for adding Data Attachments to the Ender Dragon
@@ -31,6 +31,7 @@ import tmc.enderdragon.TMCEnderDragonManager;
  * @see TMCDataAttachments#ENDER_DRAGON_DEATH_STAGE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIVE_BOMB_DATA
+ * @see TMCDataAttachments#ENDER_DRAGON_FIREBALL_BARRAGE_DATA
  * @see TMCDataAttachments#LOGGED_ATTACKERS
  */
 @Mixin(EnderDragon.class)
@@ -57,6 +58,7 @@ public abstract class EnderDragonMixin {
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER);
         dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",

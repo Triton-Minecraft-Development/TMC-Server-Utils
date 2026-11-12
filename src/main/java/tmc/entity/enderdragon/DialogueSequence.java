@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 public enum DialogueSequence {
 

@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -6,7 +6,6 @@ import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.boss.enderdragon.DragonFlightHistory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.phys.Vec3;
 
 public class TMCEnderDragonRenderer {
@@ -73,7 +72,7 @@ public class TMCEnderDragonRenderer {
         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 25, 4, 4, 4, 0.2);
     }
 
-    private static Vec3 getWarningHeadPos(EnderDragon dragon, double verticalOffset)
+    public static Vec3 getWarningHeadPos(EnderDragon dragon, double verticalOffset)
     {
         // 1. Sample 3 ticks back to match client entity lerp and render lag
         DragonFlightHistory.Sample bodySample = dragon.flightHistory.get(3);

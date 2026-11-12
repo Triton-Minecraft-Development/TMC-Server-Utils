@@ -1,4 +1,4 @@
-package tmc.enderdragon.phase;
+package tmc.entity.enderdragon.phase;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -13,13 +13,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.enderdragon.DialogueSequence;
-import tmc.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.DialogueSequence;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.Map;
 
-import static tmc.enderdragon.TMCEnderDragonManager.createEnderDragonDialogueComponent;
+import static tmc.entity.enderdragon.TMCEnderDragonManager.createEnderDragonDialogueComponent;
 
 /**
  * Opening Dialogue Perch Phase for the Ender Dragon.

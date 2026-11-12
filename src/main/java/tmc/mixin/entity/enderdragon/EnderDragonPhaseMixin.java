@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import tmc.enderdragon.EnderDragonStage;
-import tmc.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.EnderDragonStage;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 /**
  * Mixin for Ender Dragon death that acts as a "safety net" in the event that
@@ -60,7 +60,7 @@ public abstract class EnderDragonPhaseMixin {
 
     /**
      * Mixin used to tell the client the vanilla phase of a newly added phase
-     * from the {@linkplain tmc.enderdragon.TMCEnderDragonManager.Phases newly added phases}.
+     * from the {@linkplain tmc.entity.enderdragon.TMCEnderDragonManager.Phases newly added phases}.
      * This is required to prevent clients from crashing from receiving an unknown phase ID
      */
     @ModifyArg(method = "setPhase", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/syncher/SynchedEntityData;set(Lnet/minecraft/network/syncher/EntityDataAccessor;Ljava/lang/Object;)V"), index = 1)

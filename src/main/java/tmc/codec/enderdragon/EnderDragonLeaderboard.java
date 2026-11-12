@@ -20,15 +20,15 @@ public record EnderDragonLeaderboard(HashMap<UUID, Float> playerLifetimeDamages,
 
     public static final Codec<EnderDragonLeaderboard> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
-                    Codec.unboundedMap(UUIDUtil.CODEC, Codec.FLOAT)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.FLOAT)
                             .xmap(HashMap::new, map -> map)
                             .fieldOf("player_damages")
                             .forGetter(EnderDragonLeaderboard::playerLifetimeDamages),
-                    Codec.unboundedMap(UUIDUtil.CODEC, Codec.INT)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT)
                             .xmap(HashMap::new, map -> map)
                             .fieldOf("dragons_slayed")
                             .forGetter(EnderDragonLeaderboard::dragonsSlayed),
-                    Codec.unboundedMap(UUIDUtil.CODEC, Codec.FLOAT)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.FLOAT)
                             .xmap(HashMap::new, map -> map)
                             .fieldOf("best_dragon_damage")
                             .forGetter(EnderDragonLeaderboard::bestDamage)

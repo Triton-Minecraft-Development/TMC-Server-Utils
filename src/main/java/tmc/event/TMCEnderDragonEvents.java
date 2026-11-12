@@ -4,8 +4,8 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import tmc.enderdragon.DialogueSequence;
-import tmc.enderdragon.EnderDragonStage;
+import tmc.entity.enderdragon.DialogueSequence;
+import tmc.entity.enderdragon.EnderDragonStage;
 
 /**
  * Events related to the TMC Ender Dragon fight

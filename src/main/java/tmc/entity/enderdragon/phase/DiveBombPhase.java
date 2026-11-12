@@ -1,4 +1,4 @@
-package tmc.enderdragon.phase;
+package tmc.entity.enderdragon.phase;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
@@ -16,7 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.DiveBombData;
-import tmc.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.util.PlayerClusterScanner;
 
 import java.util.Optional;
@@ -27,7 +27,7 @@ import java.util.Optional;
  * of players and dive in on them. If a grouping that satisfies the requirements for a group dive cannot be
  * found, she can dive in on an individual player.
  */
-public class DiveBombPhase extends AbstractDragonPhaseInstance {
+public final class DiveBombPhase extends AbstractDragonPhaseInstance {
 
     /**
      * Blocks above the target before diving

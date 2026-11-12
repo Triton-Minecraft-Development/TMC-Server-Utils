@@ -2,3 +2,5 @@ accessWidener v2 official
 
 accessible method net/minecraft/world/entity/boss/enderdragon/phases/EnderDragonPhase create (Ljava/lang/Class;Ljava/lang/String;)Lnet/minecraft/world/entity/boss/enderdragon/phases/EnderDragonPhase;
 accessible field net/minecraft/world/entity/Entity invulnerableTime I
+extendable method net/minecraft/world/entity/AreaEffectCloud serverTick (Lnet/minecraft/server/level/ServerLevel;)V
+extendable method net/minecraft/world/entity/projectile/hurtingprojectile/Fireball getDefaultItem ()Lnet/minecraft/world/item/ItemStack;

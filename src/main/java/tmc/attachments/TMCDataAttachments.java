@@ -7,7 +7,8 @@ import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
 import tmc.codec.enderdragon.DiveBombData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.enderdragon.EnderDragonStage;
+import tmc.codec.enderdragon.FireballBarrageData;
+import tmc.entity.enderdragon.EnderDragonStage;
 
 public class TMCDataAttachments {
 
@@ -94,6 +95,16 @@ public class TMCDataAttachments {
             builder -> builder
                     .initializer(DiveBombData::new)
                     .persistent(DiveBombData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the fireball barrage phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<FireballBarrageData> ENDER_DRAGON_FIREBALL_BARRAGE_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_fireball_barrage_data"),
+            builder -> builder
+                    .initializer(FireballBarrageData::new)
+                    .persistent(FireballBarrageData.CODEC)
     );
 
     /**

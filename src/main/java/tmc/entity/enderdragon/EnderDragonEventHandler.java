@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
@@ -20,9 +20,14 @@ import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.DiveBombData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
+import tmc.codec.enderdragon.FireballBarrageData;
 import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.util.PlayerClusterScanner;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Event handlers for Ender Dragon
@@ -170,19 +175,47 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         if (enderDragon.getPhaseManager().getCurrentPhase().getPhase() == EnderDragonPhase.HOLDING_PATTERN)
         {
             DiveBombData diveBombData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
-            if (!diveBombData.isCooldownReady(ticks))
-            {
-                return;
-            }
+            FireballBarrageData fireballBarrageData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
             if (serverLevel.getRandom().nextFloat() >= 0.2f)
             {
                 return;
             }
-            if (PlayerClusterScanner.findDiveTarget(serverLevel, PlayerClusterScanner.SCAN_RADIUS_ENDER_DRAGON, PlayerClusterScanner.EPS_ENDER_DRAGON_DIVE, PlayerClusterScanner.MIN_PTS_ENDER_DRAGON_DIVE, PlayerClusterScanner.FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE).isEmpty())
+            List<EnderDragonPhase<?>> readyAttacks = this.readyAttacks(diveBombData.isCooldownReady(ticks), fireballBarrageData.isCooldownReady(ticks));
+            if (readyAttacks.isEmpty())
             {
                 return;
             }
-            enderDragon.getPhaseManager().setPhase(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE);
+            Random random = new Random();
+            EnderDragonPhase<?> chosenAttack = readyAttacks.get(random.nextInt(readyAttacks.size()));
+            if (this.isTargetingAttack(chosenAttack))
+            {
+                if (PlayerClusterScanner.findDiveTarget(serverLevel, PlayerClusterScanner.SCAN_RADIUS_ENDER_DRAGON, PlayerClusterScanner.EPS_ENDER_DRAGON_DIVE, PlayerClusterScanner.MIN_PTS_ENDER_DRAGON_DIVE, PlayerClusterScanner.FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE).isEmpty())
+                {
+                    return;
+                }
+            }
+
+            enderDragon.getPhaseManager().setPhase(chosenAttack);
         }
     }
+
+    private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage)
+    {
+        List<EnderDragonPhase<?>> attacks = new ArrayList<>(2);
+        if (diveBomb)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE);
+        }
+        if (fireballBarrage)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
+        }
+        return attacks;
+    }
+
+    private boolean isTargetingAttack(EnderDragonPhase<?> phase)
+    {
+        return phase.equals(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE) || phase.equals(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
+    }
+
 }

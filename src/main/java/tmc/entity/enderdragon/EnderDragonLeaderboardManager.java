@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;

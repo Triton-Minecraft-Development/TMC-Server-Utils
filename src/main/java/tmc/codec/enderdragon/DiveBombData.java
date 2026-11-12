@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import tmc.enderdragon.phase.DiveBombPhase;
+import tmc.entity.enderdragon.phase.DiveBombPhase;
 
 import java.util.Optional;
 

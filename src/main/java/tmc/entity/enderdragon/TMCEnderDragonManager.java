@@ -31,18 +31,35 @@ public class TMCEnderDragonManager {
     private static final double MIN_HORIZONTAL = 0.8;
     private static final double LIFT = 1.2;
 
-    public static final String[] DIALOGUE_MISC = new String[]{
-            "Let’s see how much ground you’re willing to surrender.",
-            "Stand your ground. I insist.",
-            "You wished to stand above me?",
-            "You brought arrows. I brought an answer.",
-            "Which of you is next to feel heroic?",
-            "Do you imagine I’ve forgotten where you are?",
-            "Another arrow. Surely this one will change everything.",
+    public static final String[] DIALOGUE_TAKE_DAMAGE = new String[] {
             "You have my attention. You will regret that.",
-            "Your numbers were more impressive a moment ago.",
-            "You’ve come so far to accomplish so little.",
-            "Your courage appears to be leaving without you."
+            "Another arrow. Surely this one will change everything."
+    };
+
+    public static final String[] DIALOGUE_KILL_PLAYER = new String[] {
+            "Which of you is next to feel heroic?",
+            "Your numbers were more impressive a moment ago."
+    };
+
+    public static final String[] DIALOGUE_TAUNT = new String[] {
+            "You've come so far to accomplish so little."
+    };
+
+    public static final String[] DIALOGUE_FIREBALL_BARRAGE = new String[] {
+            "How considerate. All in one place.",
+            "You brought arrows. I brought an answer",
+            "Let's see how much ground you're willing to surrender",
+    };
+
+    public static final String[] DIALOGUE_DIVE_BOMB = new String[] {
+            "How considerate. All in one place.",
+            "Stand your ground. I insist",
+            "You wished to stand above me?"
+    };
+
+    public static final String[] DIALOGUE_LIGHTNING_PHASE = new String[] {
+            "Your courage appears to be leaving without you.",
+            "Do you imagine I've forgotten where you are?"
     };
 
     private TMCEnderDragonManager() {}
@@ -132,9 +149,11 @@ public class TMCEnderDragonManager {
         {
             return false;
         }
+        // Health must be restored, otherwise vanilla EnderDragon#hurt will see the dragon as dead and force the DYING phase
+        enderDragon.setHealth(1.0f);
         setAwaitingDialogue(enderDragon, true);
         setDragonStage(enderDragon, EnderDragonStage.DEATH);
-        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
+        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
         enderDragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
         TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon, EnderDragonStage.DEATH);
         return true;

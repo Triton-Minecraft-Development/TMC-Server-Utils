@@ -17,7 +17,9 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DialogueCooldownData;
 import tmc.codec.enderdragon.DiveBombData;
+import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.util.PlayerClusterScanner;
 
@@ -105,20 +107,18 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
         }
         if (level instanceof ServerLevel serverLevel)
         {
-            Random random = new Random();
-            int choice = random.nextInt(2);
-            String dialogue = switch (choice)
-            {
-                case 0 -> TMCEnderDragonManager.DIALOGUE_MISC[1];
-                case 1 -> TMCEnderDragonManager.DIALOGUE_MISC[2];
-                default -> "";
-            };
-            if (dialogue.isEmpty())
+            DialogueCooldownData dialogueCooldownData = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(this.dragon, EnderDragonStage.STAGE_2);
+            if (!dialogueCooldownData.isAttackReady(ticks))
             {
                 return;
             }
+            Random random = new Random();
+            String dialogue = TMCEnderDragonManager.DIALOGUE_DIVE_BOMB[random.nextInt(TMCEnderDragonManager.DIALOGUE_DIVE_BOMB.length)];
             TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
                     TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setAttackCooldown(ticks + DialogueCooldownData.ATTACK_COOLDOWN_TICKS));
         }
     }
 

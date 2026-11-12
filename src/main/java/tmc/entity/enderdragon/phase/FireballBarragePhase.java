@@ -1,7 +1,6 @@
 package tmc.entity.enderdragon.phase;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,7 +20,9 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DialogueCooldownData;
 import tmc.codec.enderdragon.FireballBarrageData;
+import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.enderdragon.TMCEnderDragonRenderer;
 import tmc.entity.fireball.BlindnessFireball;
@@ -122,10 +123,10 @@ public class FireballBarragePhase extends AbstractDragonPhaseInstance {
     @Override
     public void begin()
     {
-        FireballBarrageData data = this.getData();
-        if (!data.isActive())
+        FireballBarrageData fireballBarrageData = this.getData();
+        if (!fireballBarrageData.isActive())
         {
-            data.start(this.dragon.getDeltaMovement(), buildPattern(this.dragon.getRandom()));
+            fireballBarrageData.start(this.dragon.getDeltaMovement(), buildPattern(this.dragon.getRandom()));
         }
 
         Level level = this.dragon.level();
@@ -135,20 +136,18 @@ public class FireballBarragePhase extends AbstractDragonPhaseInstance {
         }
         if (level instanceof ServerLevel serverLevel)
         {
-            Random random = new Random();
-            int choice = random.nextInt(2);
-            String dialogue = switch (choice)
-            {
-                case 0 -> TMCEnderDragonManager.DIALOGUE_MISC[0];
-                case 1 -> TMCEnderDragonManager.DIALOGUE_MISC[3];
-                default -> "";
-            };
-            if (dialogue.isEmpty())
+            DialogueCooldownData dialogueCooldownData = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(this.dragon, EnderDragonStage.STAGE_2);
+            if (!dialogueCooldownData.isAttackReady(ticks))
             {
                 return;
             }
+            Random random = new Random();
+            String dialogue = TMCEnderDragonManager.DIALOGUE_FIREBALL_BARRAGE[random.nextInt(TMCEnderDragonManager.DIALOGUE_FIREBALL_BARRAGE.length)];
             TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
                     TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setAttackCooldown(ticks + DialogueCooldownData.ATTACK_COOLDOWN_TICKS));
         }
     }
 

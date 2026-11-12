@@ -18,9 +18,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
+
+import java.util.Random;
 
 /**
  * Mixin for adding Data Attachments to the Ender Dragon
@@ -114,6 +117,14 @@ public abstract class EnderDragonMixin {
         } else
         {
             damage = Math.min(damage, MAX_DAMAGE_PER_HIT);
+        }
+
+        Random random = new Random();
+        int chance = random.nextInt(100);
+        if (chance >= 35)
+        {
+            TMCServerUtils.messageAllPlayers(level, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
+                    TMCEnderDragonManager.createEnderDragonDialogueComponent(TMCEnderDragonManager.DIALOGUE_MISC[7]));
         }
 
         Entity entity = source.getEntity();

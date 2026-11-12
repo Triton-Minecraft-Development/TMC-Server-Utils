@@ -12,14 +12,17 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.AbstractDragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.DiveBombData;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.util.PlayerClusterScanner;
 
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Dive bomb attack for the Ender Dragon.
@@ -94,6 +97,29 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
                 // Carry momentum from previous phase
                 divebombData.setStage(Stage.ASCEND).resetStageTicks().setTargetPos(null).setApexPos(null).setVelocity(this.dragon.getDeltaMovement())
         );
+
+        Level level = this.dragon.level();
+        if (level.isClientSide())
+        {
+            return;
+        }
+        if (level instanceof ServerLevel serverLevel)
+        {
+            Random random = new Random();
+            int choice = random.nextInt(2);
+            String dialogue = switch (choice)
+            {
+                case 0 -> TMCEnderDragonManager.DIALOGUE_MISC[1];
+                case 1 -> TMCEnderDragonManager.DIALOGUE_MISC[2];
+                default -> "";
+            };
+            if (dialogue.isEmpty())
+            {
+                return;
+            }
+            TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
+                    TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+        }
     }
 
     @Override

@@ -31,6 +31,20 @@ public class TMCEnderDragonManager {
     private static final double MIN_HORIZONTAL = 0.8;
     private static final double LIFT = 1.2;
 
+    public static final String[] DIALOGUE_MISC = new String[]{
+            "Let’s see how much ground you’re willing to surrender.",
+            "Stand your ground. I insist.",
+            "You wished to stand above me?",
+            "You brought arrows. I brought an answer.",
+            "Which of you is next to feel heroic?",
+            "Do you imagine I’ve forgotten where you are?",
+            "Another arrow. Surely this one will change everything.",
+            "You have my attention. You will regret that.",
+            "Your numbers were more impressive a moment ago.",
+            "You’ve come so far to accomplish so little.",
+            "Your courage appears to be leaving without you."
+    };
+
     private TMCEnderDragonManager() {}
 
     /**

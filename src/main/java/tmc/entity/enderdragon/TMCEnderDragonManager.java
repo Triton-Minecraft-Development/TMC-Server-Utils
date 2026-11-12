@@ -149,9 +149,11 @@ public class TMCEnderDragonManager {
         {
             return false;
         }
+        // Health must be restored, otherwise vanilla EnderDragon#hurt will see the dragon as dead and force the DYING phase
+        enderDragon.setHealth(1.0f);
         setAwaitingDialogue(enderDragon, true);
         setDragonStage(enderDragon, EnderDragonStage.DEATH);
-        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
+        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
         enderDragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
         TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon, EnderDragonStage.DEATH);
         return true;

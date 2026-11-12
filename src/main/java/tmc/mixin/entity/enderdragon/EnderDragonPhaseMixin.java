@@ -40,6 +40,14 @@ public abstract class EnderDragonPhaseMixin {
             if (TMCEnderDragonManager.tryStartClosingDialogue(this.dragon))
             {
                 ci.cancel();
+                return;
+            }
+
+            // Closing dialogue has not finished yet
+            if (TMCEnderDragonManager.getDragonStage(this.dragon) == EnderDragonStage.DEATH &&
+                    TMCEnderDragonManager.isAwaitingDialogue(this.dragon))
+            {
+                ci.cancel();
             }
         }
     }

@@ -36,7 +36,7 @@ public abstract class EnderDragonPhaseMixin {
                 ci.cancel();
                 return;
             }
-            // TODO: Actual Death
+
             if (TMCEnderDragonManager.tryStartClosingDialogue(this.dragon))
             {
                 ci.cancel();
@@ -47,11 +47,15 @@ public abstract class EnderDragonPhaseMixin {
     @ModifyVariable(method = "setPhase", at = @At("HEAD"), argsOnly = true, name = "target")
     private EnderDragonPhase<?> swapToDialoguePerch(EnderDragonPhase<?> target)
     {
-        if (target == EnderDragonPhase.SITTING_SCANNING && TMCEnderDragonManager.isAwaitingDialogue(this.dragon) && TMCEnderDragonManager.getDragonStage(this.dragon) == EnderDragonStage.STAGE_2)
+        if (target == EnderDragonPhase.SITTING_SCANNING &&
+                TMCEnderDragonManager.isAwaitingDialogue(this.dragon) &&
+                TMCEnderDragonManager.getDragonStage(this.dragon) == EnderDragonStage.STAGE_2)
         {
             return TMCEnderDragonManager.Phases.OPENING_DIALOGUE_PERCH;
         }
-        if (target == EnderDragonPhase.SITTING_SCANNING && TMCEnderDragonManager.isAwaitingDialogue(this.dragon) && TMCEnderDragonManager.getDragonStage(this.dragon) == EnderDragonStage.DEATH)
+        if (target == EnderDragonPhase.SITTING_SCANNING &&
+                TMCEnderDragonManager.isAwaitingDialogue(this.dragon) &&
+                TMCEnderDragonManager.getDragonStage(this.dragon) == EnderDragonStage.DEATH)
         {
             return TMCEnderDragonManager.Phases.CLOSING_DIALOGUE_PERCH;
         }

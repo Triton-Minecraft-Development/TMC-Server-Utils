@@ -20,10 +20,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DialogueCooldownData;
 import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
-
-import java.util.Random;
 
 /**
  * Mixin for adding Data Attachments to the Ender Dragon
@@ -33,6 +32,7 @@ import java.util.Random;
  * @see TMCDataAttachments#ENDER_DRAGON_STAGE_2_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DEATH_STAGE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_TIMER
+ * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_DIVE_BOMB_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_FIREBALL_BARRAGE_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_LIGHTNING_BLAST_DATA
@@ -61,6 +61,7 @@ public abstract class EnderDragonMixin {
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
@@ -119,27 +120,47 @@ public abstract class EnderDragonMixin {
             damage = Math.min(damage, MAX_DAMAGE_PER_HIT);
         }
 
-        Random random = new Random();
-        int chance = random.nextInt(100);
-        if (chance >= 35)
-        {
-            TMCServerUtils.messageAllPlayers(level, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
-                    TMCEnderDragonManager.createEnderDragonDialogueComponent(TMCEnderDragonManager.DIALOGUE_MISC[7]));
-        }
 
         Entity entity = source.getEntity();
+        DialogueCooldownData dialogueCooldownData = dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+        int ticks = TMCEnderDragonManager.getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
         if (entity != null)
         {
             if (entity instanceof ServerPlayer player)
             {
                 TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
+                if (TMCEnderDragonManager.getDragonStage(dragon) == EnderDragonStage.STAGE_2 && damage >= 8)
+                {
+                    if (!dialogueCooldownData.isTakeDamageReady(ticks))
+                    {
+                        return damage;
+                    }
+                    TMCServerUtils.messageAllPlayers(level, p -> TMCServerUtils.isPlayerInDimension(p, ServerLevel.END),
+                            TMCEnderDragonManager.createEnderDragonDialogueComponent(TMCEnderDragonManager.DIALOGUE_TAKE_DAMAGE[0]));
+
+                    dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data ->
+                            data.setTakeDamageCooldown(ticks + DialogueCooldownData.TAKE_DAMAGE_COOLDOWN_TICKS));
+                }
             } else if (entity instanceof Arrow arrow)
             {
                 if (arrow.getOwner() != null && arrow.getOwner() instanceof ServerPlayer player)
                 {
                     TMCEnderDragonManager.logPlayerAttacker(dragon, player, damage);
+                    if (TMCEnderDragonManager.getDragonStage(dragon) == EnderDragonStage.STAGE_2)
+                    {
+                        if (!dialogueCooldownData.isTakeDamageReady(ticks))
+                        {
+                            return damage;
+                        }
+                        TMCServerUtils.messageAllPlayers(level, serverPlayer -> TMCServerUtils.isPlayerInDimension(serverPlayer, ServerLevel.END),
+                                TMCEnderDragonManager.createEnderDragonDialogueComponent(TMCEnderDragonManager.DIALOGUE_TAKE_DAMAGE[1]));
+
+                        dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data ->
+                                data.setTakeDamageCooldown(ticks + DialogueCooldownData.TAKE_DAMAGE_COOLDOWN_TICKS));
+                    }
                 }
             }
+
         }
         return damage;
     }

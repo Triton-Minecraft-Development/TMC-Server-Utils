@@ -3,6 +3,7 @@ package tmc.entity.enderdragon.phase;
 import com.mojang.math.Transformation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -26,8 +27,10 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DialogueCooldownData;
 import tmc.codec.enderdragon.LightningBlastData;
 import tmc.damagetypes.TMCDamageTypes;
+import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 import java.util.ArrayList;
@@ -51,11 +54,9 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final double APPROACH_AGILITY = 0.12;
     private static final int APPROACH_TIMEOUT = 120;
 
-    // ---- Hover ----
     private static final double BRAKE = 0.8;
     private static final double BOB_AMPLITUDE = 0.04;
 
-    // ---- Timing ----
     private static final int WINDUP_TICKS = 20;
     private static final int CHARGE_TICKS = 60;
     private static final int LINGER_TICKS = 20;
@@ -164,10 +165,10 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     @Override
     public void begin()
     {
-        LightningBlastData data = this.getData();
-        if (!data.isActive())
+        LightningBlastData lightningBlastData = this.getData();
+        if (!lightningBlastData.isActive())
         {
-            data.start(dragon.getDeltaMovement());
+            lightningBlastData.start(this.dragon.getDeltaMovement());
         }
 
         Level level = this.dragon.level();
@@ -177,9 +178,18 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         }
         if (level instanceof ServerLevel serverLevel)
         {
-            String dialogue = TMCEnderDragonManager.DIALOGUE_MISC[10];
+            DialogueCooldownData dialogueCooldownData = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(this.dragon, EnderDragonStage.STAGE_2);
+            if (!dialogueCooldownData.isAttackReady(ticks))
+            {
+                return;
+            }
+            Random random = new Random();
+            String dialogue = TMCEnderDragonManager.DIALOGUE_LIGHTNING_PHASE[random.nextInt(TMCEnderDragonManager.DIALOGUE_LIGHTNING_PHASE.length)];
             TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
                     TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setAttackCooldown(ticks + DialogueCooldownData.ATTACK_COOLDOWN_TICKS));
         }
     }
 
@@ -198,7 +208,7 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         // begin() has no level, so the perch point is worked out here
         if (data.getPerchPos().isEmpty())
         {
-            data.setPerchPos(computePerch(level));
+            data.setPerchPos(this.computePerch(level));
         }
 
         data.updateTicks();
@@ -457,6 +467,8 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
             marker.setViewRange(MARKER_VIEW_RANGE);
             marker.addTag(MARKER_TAG);
             marker.snapTo(corner.getX(), corner.getY() + MARKER_LIFT + i * MARKER_STACK, corner.getZ(), 0.0F, 0.0F);
+            marker.setGlowingTag(true);
+            marker.setGlowColorOverride(TextColor.LIGHT_PURPLE.getValue());
 
             level.addFreshEntity(marker);
             this.markers.add(marker);

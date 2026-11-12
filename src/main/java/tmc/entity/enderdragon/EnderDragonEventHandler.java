@@ -32,7 +32,7 @@ import java.util.Random;
  */
 public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
         TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
-        TMCEnderDragonEvents.PhaseTick {
+        TMCEnderDragonEvents.PhaseTick, ServerLivingEntityEvents.AfterDeath {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -62,6 +62,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         TMCEnderDragonEvents.ON_DIALOGUE_TICK.register(this);
         TMCEnderDragonEvents.ON_DIALOGUE_END.register(this);
         TMCEnderDragonEvents.ON_STAGE_TICK.register(this);
+        ServerLivingEntityEvents.AFTER_DEATH.register(this);
     }
 
     @Override
@@ -72,7 +73,13 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             return true;
         }
 
-        return !TMCEnderDragonManager.tryStartStage2(enderDragon);
+        EnderDragonStage stage = TMCEnderDragonManager.getDragonStage(enderDragon);
+        return switch (stage)
+        {
+            case VANILLA -> !TMCEnderDragonManager.tryStartStage2(enderDragon);
+            case STAGE_2 -> !TMCEnderDragonManager.tryStartClosingDialogue(enderDragon);
+            case DEATH -> true;
+        };
     }
 
     @Override
@@ -231,4 +238,32 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         return phase.equals(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE) || phase.equals(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
     }
 
+    @Override
+    public void afterDeath(LivingEntity entity, DamageSource damageSource)
+    {
+        if (damageSource.getEntity() == null)
+        {
+            return;
+        }
+        if (damageSource.getEntity() instanceof EnderDragon dragon)
+        {
+            if (!(entity instanceof ServerPlayer serverPlayer))
+            {
+                return;
+            }
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
+            DialogueCooldownData dialogueCooldownData = dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            if (!dialogueCooldownData.isKillPlayerReady(ticks))
+            {
+                return;
+            }
+            Random random = new Random();
+            int choice = random.nextInt(TMCEnderDragonManager.DIALOGUE_KILL_PLAYER.length);
+            String dialogue = TMCEnderDragonManager.DIALOGUE_KILL_PLAYER[choice];
+            TMCServerUtils.messageAllPlayers(serverPlayer.level(), player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
+                    TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setKillPlayerCooldown(ticks + DialogueCooldownData.KILL_PLAYER_COOLDOWN_TICKS));
+        }
+    }
 }

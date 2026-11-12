@@ -33,6 +33,8 @@ import static tmc.entity.enderdragon.TMCEnderDragonManager.createEnderDragonDial
  */
 public final class OpeningDialoguePerchPhase extends AbstractDragonSittingPhase {
 
+    // FIXME: This phase MUST fly the dragon to perch in order to catch all edge cases!
+
     private static final int DURATION_TICKS = 625; // 31.25 seconds
 
     private static final Map<Integer, Component> INITIAL_DIALOGUE = Map.ofEntries(

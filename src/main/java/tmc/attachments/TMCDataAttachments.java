@@ -5,9 +5,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
-import tmc.codec.enderdragon.DiveBombData;
-import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.codec.enderdragon.FireballBarrageData;
+import tmc.codec.enderdragon.*;
 import tmc.entity.enderdragon.EnderDragonStage;
 
 public class TMCDataAttachments {
@@ -105,6 +103,26 @@ public class TMCDataAttachments {
             builder -> builder
                     .initializer(FireballBarrageData::new)
                     .persistent(FireballBarrageData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the lightning blast phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<LightningBlastData> ENDER_DRAGON_LIGHTNING_BLAST_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_lightning_blast_data"),
+            builder -> builder
+                    .initializer(LightningBlastData::new)
+                    .persistent(LightningBlastData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the "The Sky Answers to Me" attack at 50% HP during phase 2
+     */
+    public static final AttachmentType<SkyAnswersData> ENDER_DRAGON_SKY_ANSWERS_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_sky_answers_data"),
+            builder -> builder
+                    .initializer(SkyAnswersData::new)
+                    .persistent(SkyAnswersData.CODEC)
     );
 
     /**

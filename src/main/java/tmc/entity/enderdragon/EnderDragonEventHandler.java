@@ -18,9 +18,7 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.enderdragon.DiveBombData;
-import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.codec.enderdragon.FireballBarrageData;
+import tmc.codec.enderdragon.*;
 import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.util.PlayerClusterScanner;
@@ -118,7 +116,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     player.connection.send(new ClientboundSetSubtitleTextPacket(INITIAL_SUBTITLE));
 
                     LightningBolt lightningBolt = new LightningBolt(EntityTypes.LIGHTNING_BOLT, serverLevel);
-
+                    lightningBolt.setVisualOnly(true);
                     lightningBolt.setPos(player.position());
 
                     serverLevel.addFreshEntity(lightningBolt);
@@ -171,16 +169,27 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         {
             return;
         }
-
+        SkyAnswersData skyAnswersData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
+        EnderDragonPhase<?> current = enderDragon.getPhaseManager().getCurrentPhase().getPhase();
+        if (!skyAnswersData.isUsed() && enderDragon.getHealth() <= enderDragon.getMaxHealth() * 0.5f && current != EnderDragonPhase.DYING)
+        {
+            enderDragon.getPhaseManager().setPhase(TMCEnderDragonManager.Phases.SKY_ANSWERS_PHASE);
+            return;
+        }
         if (enderDragon.getPhaseManager().getCurrentPhase().getPhase() == EnderDragonPhase.HOLDING_PATTERN)
         {
             DiveBombData diveBombData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
             FireballBarrageData fireballBarrageData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
+            LightningBlastData lightningBlastData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA);
             if (serverLevel.getRandom().nextFloat() >= 0.2f)
             {
                 return;
             }
-            List<EnderDragonPhase<?>> readyAttacks = this.readyAttacks(diveBombData.isCooldownReady(ticks), fireballBarrageData.isCooldownReady(ticks));
+            List<EnderDragonPhase<?>> readyAttacks = this.readyAttacks(
+                    diveBombData.isCooldownReady(ticks),
+                    fireballBarrageData.isCooldownReady(ticks),
+                    lightningBlastData.isCooldownReady(ticks)
+            );
             if (readyAttacks.isEmpty())
             {
                 return;
@@ -199,9 +208,9 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         }
     }
 
-    private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage)
+    private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage, boolean lightningBlast)
     {
-        List<EnderDragonPhase<?>> attacks = new ArrayList<>(2);
+        List<EnderDragonPhase<?>> attacks = new ArrayList<>(3);
         if (diveBomb)
         {
             attacks.add(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE);
@@ -209,6 +218,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         if (fireballBarrage)
         {
             attacks.add(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
+        }
+        if (lightningBlast)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.LIGHTNING_BLAST_PHASE);
         }
         return attacks;
     }

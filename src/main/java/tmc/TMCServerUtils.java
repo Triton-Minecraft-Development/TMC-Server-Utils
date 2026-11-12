@@ -17,6 +17,7 @@ import tmc.config.ConfigManager;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.EnderDragonEventHandler;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.WarningManager;
 
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -63,6 +64,7 @@ public class TMCServerUtils implements ModInitializer
         TMCDataAttachments.initialize();
         TMCEnderDragonManager.Phases.initialize();
         TMCDamageTypes.initialize();
+        WarningManager.AlarmSound.register();
         new EnderDragonEventHandler();
     }
 }

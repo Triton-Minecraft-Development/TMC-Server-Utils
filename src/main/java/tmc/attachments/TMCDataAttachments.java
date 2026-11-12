@@ -145,5 +145,17 @@ public class TMCDataAttachments {
                     .persistent(EnderDragonLeaderboard.CODEC)
     );
 
+    /**
+     * Attachment used for tracking who has warning titles currently.
+     * <p>Returns true if the player has warnings on their screen</p>
+     * <p>Returns false otherwise</p>
+     */
+    public static final AttachmentType<Boolean> PLAYER_WARNING_TITLES_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("player_warning_titles_data"),
+            builder -> builder
+                    .initializer(() -> false)
+                    .persistent(Codec.BOOL)
+    );
+
     public static void initialize() {}
 }

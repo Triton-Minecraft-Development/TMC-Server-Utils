@@ -103,6 +103,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         if (sequence == DialogueSequence.STAGE_2 && dialogueTick >= 525)
         {
             TMCEnderDragonRenderer.renderWarning(serverLevel, enderDragon, dialogueTick);
+            for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceTo(enderDragon) <= 51))
+            {
+                WarningManager.warnPlayerStage2Opening(player, dialogueTick - 525, player.distanceTo(enderDragon));
+            }
         }
     }
 

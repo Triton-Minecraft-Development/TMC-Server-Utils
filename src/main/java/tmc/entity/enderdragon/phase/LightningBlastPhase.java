@@ -57,9 +57,9 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final double BRAKE = 0.8;
     private static final double BOB_AMPLITUDE = 0.04;
 
-    private static final int WINDUP_TICKS = 20;
-    private static final int CHARGE_TICKS = 60;
-    private static final int LINGER_TICKS = 20;
+    public static final int WINDUP_TICKS = 20;
+    public static final int CHARGE_TICKS = 60;
+    public static final int LINGER_TICKS = 20;
     private static final int SPARK_INTERVAL = 4;
     public static final int COOLDOWN_TICKS = 600;
 

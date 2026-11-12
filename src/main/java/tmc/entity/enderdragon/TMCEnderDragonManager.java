@@ -16,10 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.damagetypes.TMCDamageTypes;
-import tmc.entity.enderdragon.phase.ClosingDialoguePerchPhase;
-import tmc.entity.enderdragon.phase.DiveBombPhase;
-import tmc.entity.enderdragon.phase.FireballBarragePhase;
-import tmc.entity.enderdragon.phase.OpeningDialoguePerchPhase;
+import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.HashMap;
@@ -177,7 +174,6 @@ public class TMCEnderDragonManager {
         return Boolean.TRUE.equals(dragon.getAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING));
     }
 
-
     /**
      * Sets if the given Ender Dragon is awaiting dialogue. This DOES NOT
      * change the dragon to the {@linkplain Phases#OPENING_DIALOGUE_PERCH opening dialogue perch}
@@ -333,7 +329,20 @@ public class TMCEnderDragonManager {
          */
         public static final EnderDragonPhase<DiveBombPhase> DIVE_BOMB_PHASE = create(DiveBombPhase.class, "DiveBomb", EnderDragonPhase.CHARGING_PLAYER);
 
+        /**
+         * Phase the Ender Dragon enters when performing a fireball barrage attack
+         */
         public static final EnderDragonPhase<FireballBarragePhase> FIREBALL_BARRAGE_PHASE = create(FireballBarragePhase.class, "FireballBarrage", EnderDragonPhase.HOVERING);
+
+        /**
+         * Phase the Ender Dragon enters when performing a lightning blast attack
+         */
+        public static final EnderDragonPhase<LightningBlastPhase> LIGHTNING_BLAST_PHASE = create(LightningBlastPhase.class, "LightningBlast", EnderDragonPhase.HOVERING);
+
+        /**
+         * Phase the Ender Dragon enters when performing her "The Sky Answers to Me" dialogue
+         */
+        public static final EnderDragonPhase<SkyAnswersPhase> SKY_ANSWERS_PHASE = create(SkyAnswersPhase.class, "SkyAnswers", EnderDragonPhase.HOVERING);
 
         /**
          * Registers a new {@linkplain EnderDragonPhase Ender Dragon Phase}

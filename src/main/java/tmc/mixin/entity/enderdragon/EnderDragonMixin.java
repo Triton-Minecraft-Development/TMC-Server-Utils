@@ -32,6 +32,8 @@ import tmc.entity.enderdragon.TMCEnderDragonManager;
  * @see TMCDataAttachments#ENDER_DRAGON_DIALOGUE_TIMER
  * @see TMCDataAttachments#ENDER_DRAGON_DIVE_BOMB_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_FIREBALL_BARRAGE_DATA
+ * @see TMCDataAttachments#ENDER_DRAGON_LIGHTNING_BLAST_DATA
+ * @see TMCDataAttachments#ENDER_DRAGON_SKY_ANSWERS_DATA
  * @see TMCDataAttachments#LOGGED_ATTACKERS
  */
 @Mixin(EnderDragon.class)
@@ -59,6 +61,8 @@ public abstract class EnderDragonMixin {
         dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",

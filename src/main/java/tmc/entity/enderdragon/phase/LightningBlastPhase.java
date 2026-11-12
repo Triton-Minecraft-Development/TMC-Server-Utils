@@ -16,6 +16,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.AbstractDragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -23,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.LightningBlastData;
 import tmc.damagetypes.TMCDamageTypes;
@@ -30,6 +32,7 @@ import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class LightningBlastPhase extends AbstractDragonPhaseInstance {
 
@@ -165,6 +168,18 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         if (!data.isActive())
         {
             data.start(dragon.getDeltaMovement());
+        }
+
+        Level level = this.dragon.level();
+        if (level.isClientSide())
+        {
+            return;
+        }
+        if (level instanceof ServerLevel serverLevel)
+        {
+            String dialogue = TMCEnderDragonManager.DIALOGUE_MISC[10];
+            TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
+                    TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
         }
     }
 

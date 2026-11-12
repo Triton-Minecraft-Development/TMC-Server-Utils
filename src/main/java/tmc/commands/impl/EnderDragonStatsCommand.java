@@ -1,6 +1,5 @@
 package tmc.commands.impl;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -9,16 +8,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.enderdragon.EnderDragonLeaderboardManager;
+import tmc.entity.enderdragon.EnderDragonLeaderboardManager;
 
 import java.util.Collection;
 import java.util.UUID;

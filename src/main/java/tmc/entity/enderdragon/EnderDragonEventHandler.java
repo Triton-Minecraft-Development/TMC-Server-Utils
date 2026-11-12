@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
@@ -18,14 +18,21 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.enderdragon.EnderDragonLeaderboard;
+import tmc.codec.enderdragon.*;
 import tmc.commands.impl.EnderDragonStatsCommand;
 import tmc.event.TMCEnderDragonEvents;
+import tmc.util.PlayerClusterScanner;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Event handlers for Ender Dragon
  */
-public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath, TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd {
+public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
+        TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
+        TMCEnderDragonEvents.PhaseTick {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -44,7 +51,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     private static final Component FINAL_SUBTITLE = Component.literal(ChatFormatting.LIGHT_PURPLE + "The End has fallen");
     private static final Component FINAL_CHAT_MESSAGE = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.LIGHT_PURPLE + "The " + ChatFormatting.BOLD + "Ender Dragon" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " has been defeated! " + ChatFormatting.GOLD + ChatFormatting.BOLD + "Congratulations!");
 
-    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your total Ender Dragons slayed using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
+    private static final Component COMMAND_MESSAGE = Component.literal(ChatFormatting.WHITE + "You can check your stats against the Ender Dragon using \"" + ChatFormatting.AQUA + "/" + EnderDragonStatsCommand.NAME + ChatFormatting.WHITE + "\"");
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
 
@@ -54,6 +61,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         TMCEnderDragonEvents.STAGE_TRANSITION.register(this);
         TMCEnderDragonEvents.ON_DIALOGUE_TICK.register(this);
         TMCEnderDragonEvents.ON_DIALOGUE_END.register(this);
+        TMCEnderDragonEvents.ON_STAGE_TICK.register(this);
     }
 
     @Override
@@ -108,7 +116,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     player.connection.send(new ClientboundSetSubtitleTextPacket(INITIAL_SUBTITLE));
 
                     LightningBolt lightningBolt = new LightningBolt(EntityTypes.LIGHTNING_BOLT, serverLevel);
-
+                    lightningBolt.setVisualOnly(true);
                     lightningBolt.setPos(player.position());
 
                     serverLevel.addFreshEntity(lightningBolt);
@@ -148,8 +156,79 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     {
                         player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(newKills));
                     }
+                    player.sendSystemMessage(COMMAND_MESSAGE);
                 });
             }
         }
     }
+
+    @Override
+    public void onStageTick(ServerLevel serverLevel, EnderDragon enderDragon, EnderDragonStage stage, int ticks)
+    {
+        if (stage != EnderDragonStage.STAGE_2)
+        {
+            return;
+        }
+        SkyAnswersData skyAnswersData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
+        EnderDragonPhase<?> current = enderDragon.getPhaseManager().getCurrentPhase().getPhase();
+        if (!skyAnswersData.isUsed() && enderDragon.getHealth() <= enderDragon.getMaxHealth() * 0.5f && current != EnderDragonPhase.DYING)
+        {
+            enderDragon.getPhaseManager().setPhase(TMCEnderDragonManager.Phases.SKY_ANSWERS_PHASE);
+            return;
+        }
+        if (enderDragon.getPhaseManager().getCurrentPhase().getPhase() == EnderDragonPhase.HOLDING_PATTERN)
+        {
+            DiveBombData diveBombData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA);
+            FireballBarrageData fireballBarrageData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
+            LightningBlastData lightningBlastData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA);
+            if (serverLevel.getRandom().nextFloat() >= 0.2f)
+            {
+                return;
+            }
+            List<EnderDragonPhase<?>> readyAttacks = this.readyAttacks(
+                    diveBombData.isCooldownReady(ticks),
+                    fireballBarrageData.isCooldownReady(ticks),
+                    lightningBlastData.isCooldownReady(ticks)
+            );
+            if (readyAttacks.isEmpty())
+            {
+                return;
+            }
+            Random random = new Random();
+            EnderDragonPhase<?> chosenAttack = readyAttacks.get(random.nextInt(readyAttacks.size()));
+            if (this.isTargetingAttack(chosenAttack))
+            {
+                if (PlayerClusterScanner.findDiveTarget(serverLevel, PlayerClusterScanner.SCAN_RADIUS_ENDER_DRAGON, PlayerClusterScanner.EPS_ENDER_DRAGON_DIVE, PlayerClusterScanner.MIN_PTS_ENDER_DRAGON_DIVE, PlayerClusterScanner.FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE).isEmpty())
+                {
+                    return;
+                }
+            }
+
+            enderDragon.getPhaseManager().setPhase(chosenAttack);
+        }
+    }
+
+    private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage, boolean lightningBlast)
+    {
+        List<EnderDragonPhase<?>> attacks = new ArrayList<>(3);
+        if (diveBomb)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE);
+        }
+        if (fireballBarrage)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
+        }
+        if (lightningBlast)
+        {
+            attacks.add(TMCEnderDragonManager.Phases.LIGHTNING_BLAST_PHASE);
+        }
+        return attacks;
+    }
+
+    private boolean isTargetingAttack(EnderDragonPhase<?> phase)
+    {
+        return phase.equals(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE) || phase.equals(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
+    }
+
 }

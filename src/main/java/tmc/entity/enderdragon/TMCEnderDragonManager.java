@@ -1,4 +1,4 @@
-package tmc.enderdragon;
+package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.ChatFormatting;
@@ -16,18 +16,15 @@ import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.damagetypes.TMCDamageTypes;
-import tmc.enderdragon.phase.ClosingDialoguePerchPhase;
-import tmc.enderdragon.phase.OpeningDialoguePerchPhase;
+import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.UUID;
 
 public class TMCEnderDragonManager {
 
-    // FIXME: Attribute Cap! A true 2000 HP is NOT POSSIBLE
-    private static final float STAGE_2_HEALTH = 2000f;
+    private static final float STAGE_2_HEALTH = 1024f; // Attribute limit
 
     private static final double BLAST_RADIUS = 50;
     private static final double MAX_HORIZONTAL = 3.5;
@@ -44,17 +41,6 @@ public class TMCEnderDragonManager {
     public static Component createEnderDragonDialogueComponent(String message)
     {
         return Component.literal(ChatFormatting.DARK_RED + "[BOSS] " + ChatFormatting.LIGHT_PURPLE + "[Ender Dragon] " + ChatFormatting.WHITE + message);
-    }
-
-    public static boolean hasAttachments(EnderDragon enderDragon)
-    {
-        return enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA) &&
-                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING) &&
-                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_VANILLA_TIMER) &&
-                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER) &&
-                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER) &&
-                enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER) &&
-                enderDragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS);
     }
 
     public static void logPlayerAttacker(EnderDragon dragon, ServerPlayer player, float damage)
@@ -187,7 +173,6 @@ public class TMCEnderDragonManager {
     {
         return Boolean.TRUE.equals(dragon.getAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_PENDING));
     }
-
 
     /**
      * Sets if the given Ender Dragon is awaiting dialogue. This DOES NOT
@@ -338,6 +323,26 @@ public class TMCEnderDragonManager {
          * Phase the Ender Dragon enters when perching for final dialogue
          */
         public static final EnderDragonPhase<ClosingDialoguePerchPhase> CLOSING_DIALOGUE_PERCH = create(ClosingDialoguePerchPhase.class, "ClosingDialoguePerch", EnderDragonPhase.SITTING_SCANNING);
+
+        /**
+         * Phase the Ender Dragon enters when diving into players
+         */
+        public static final EnderDragonPhase<DiveBombPhase> DIVE_BOMB_PHASE = create(DiveBombPhase.class, "DiveBomb", EnderDragonPhase.CHARGING_PLAYER);
+
+        /**
+         * Phase the Ender Dragon enters when performing a fireball barrage attack
+         */
+        public static final EnderDragonPhase<FireballBarragePhase> FIREBALL_BARRAGE_PHASE = create(FireballBarragePhase.class, "FireballBarrage", EnderDragonPhase.HOVERING);
+
+        /**
+         * Phase the Ender Dragon enters when performing a lightning blast attack
+         */
+        public static final EnderDragonPhase<LightningBlastPhase> LIGHTNING_BLAST_PHASE = create(LightningBlastPhase.class, "LightningBlast", EnderDragonPhase.HOVERING);
+
+        /**
+         * Phase the Ender Dragon enters when performing her "The Sky Answers to Me" dialogue
+         */
+        public static final EnderDragonPhase<SkyAnswersPhase> SKY_ANSWERS_PHASE = create(SkyAnswersPhase.class, "SkyAnswers", EnderDragonPhase.HOVERING);
 
         /**
          * Registers a new {@linkplain EnderDragonPhase Ender Dragon Phase}

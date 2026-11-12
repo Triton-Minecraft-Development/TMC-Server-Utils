@@ -5,8 +5,8 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistory;
-import tmc.codec.enderdragon.EnderDragonLeaderboard;
-import tmc.enderdragon.EnderDragonStage;
+import tmc.codec.enderdragon.*;
+import tmc.entity.enderdragon.EnderDragonStage;
 
 public class TMCDataAttachments {
 
@@ -86,6 +86,46 @@ public class TMCDataAttachments {
     );
 
     /**
+     * Attachment used for tracking data during the dive bomb phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<DiveBombData> ENDER_DRAGON_DIVE_BOMB_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_dive_bomb_data"),
+            builder -> builder
+                    .initializer(DiveBombData::new)
+                    .persistent(DiveBombData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the fireball barrage phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<FireballBarrageData> ENDER_DRAGON_FIREBALL_BARRAGE_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_fireball_barrage_data"),
+            builder -> builder
+                    .initializer(FireballBarrageData::new)
+                    .persistent(FireballBarrageData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the lightning blast phase of the Ender Dragon in stage 2
+     */
+    public static final AttachmentType<LightningBlastData> ENDER_DRAGON_LIGHTNING_BLAST_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_lightning_blast_data"),
+            builder -> builder
+                    .initializer(LightningBlastData::new)
+                    .persistent(LightningBlastData.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking data during the "The Sky Answers to Me" attack at 50% HP during phase 2
+     */
+    public static final AttachmentType<SkyAnswersData> ENDER_DRAGON_SKY_ANSWERS_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_sky_answers_data"),
+            builder -> builder
+                    .initializer(SkyAnswersData::new)
+                    .persistent(SkyAnswersData.CODEC)
+    );
+
+    /**
      * Attachment used for tracking leaderboard stats for the Ender Dragon
      */
     public static final AttachmentType<EnderDragonLeaderboard> SERVER_ENDER_DRAGON_LEADERBOARD = AttachmentRegistry.create(
@@ -95,8 +135,5 @@ public class TMCDataAttachments {
                     .persistent(EnderDragonLeaderboard.CODEC)
     );
 
-    public static void initialize()
-    {
-
-    }
+    public static void initialize() {}
 }

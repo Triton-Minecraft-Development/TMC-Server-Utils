@@ -31,6 +31,8 @@ import static tmc.entity.enderdragon.TMCEnderDragonManager.createEnderDragonDial
  */
 public final class ClosingDialoguePerchPhase extends AbstractDragonSittingPhase {
 
+    // FIXME: This phase MUST fly the dragon to perch in order to catch all edge cases!
+
     private static final int DURATION_TICKS = 235;
 
     private static final Map<Integer, Component> ENDING_DIALOGUE = Map.ofEntries(
@@ -38,7 +40,7 @@ public final class ClosingDialoguePerchPhase extends AbstractDragonSittingPhase 
             Map.entry(55, createEnderDragonDialogueComponent("I had rather hoped it would be the quiet one.")),
             Map.entry(105, createEnderDragonDialogueComponent("Go on, little heroes. Your portal awaits.")),
             Map.entry(150, createEnderDragonDialogueComponent("Look up once more before you go.")),
-            Map.entry(195, createEnderDragonDialogueComponent("Event the End gets one last star."))
+            Map.entry(195, createEnderDragonDialogueComponent("Even the End gets one last star."))
     );
 
     public ClosingDialoguePerchPhase(EnderDragon dragon)

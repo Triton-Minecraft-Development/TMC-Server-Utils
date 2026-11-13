@@ -27,7 +27,7 @@ public class LightningBlastData {
                             .forGetter(LightningBlastData::getPerchPos),
                     Vec3.CODEC.fieldOf("velocity")
                             .forGetter(LightningBlastData::getVelocity),
-                    BlockPos.CODEC.listOf().fieldOf("zones") // each is a zone's min corner, Y = ground level
+                    Vec3.CODEC.listOf().fieldOf("zones") // each is a zone's min corner, Y = ground level
                             .forGetter(LightningBlastData::getZones),
                     Codec.INT.fieldOf("cooldown_ticks")
                             .forGetter(LightningBlastData::getCooldownTimestampTicks)
@@ -43,7 +43,7 @@ public class LightningBlastData {
     @Nullable
     private Vec3 perchPos;
     private Vec3 velocity;
-    private List<BlockPos> zones;
+    private List<Vec3> zones;
     private int cooldownTimestampTicks;
 
 
@@ -59,7 +59,7 @@ public class LightningBlastData {
         this.cooldownTimestampTicks = 0;
     }
 
-    public LightningBlastData(boolean active, LightningBlastPhase.Stage stage, int stageTicks, int totalTicks, @Nullable Vec3 perchPos, Vec3 velocity, List<BlockPos> zones, int cooldownTimestampTicks)
+    public LightningBlastData(boolean active, LightningBlastPhase.Stage stage, int stageTicks, int totalTicks, @Nullable Vec3 perchPos, Vec3 velocity, List<Vec3> zones, int cooldownTimestampTicks)
     {
         this.active = active;
         this.stage = stage;
@@ -117,6 +117,12 @@ public class LightningBlastData {
         return this;
     }
 
+    public LightningBlastData resetTotalTicks()
+    {
+        this.totalTicks = 0;
+        return this;
+    }
+
     public int getStageTicks()
     {
         return this.stageTicks;
@@ -149,13 +155,13 @@ public class LightningBlastData {
         return this.velocity;
     }
 
-    public LightningBlastData setZones(List<BlockPos> zones)
+    public LightningBlastData setZones(List<Vec3> zones)
     {
         this.zones = new ArrayList<>(zones);
         return this;
     }
 
-    public List<BlockPos> getZones()
+    public List<Vec3> getZones()
     {
         return this.zones;
     }

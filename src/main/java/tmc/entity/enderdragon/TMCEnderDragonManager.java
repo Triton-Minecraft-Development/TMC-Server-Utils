@@ -2,6 +2,8 @@ package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -12,12 +14,16 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
+import tmc.mixin.entity.enderdragon.EnderDragonFightAccessor;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -31,18 +37,35 @@ public class TMCEnderDragonManager {
     private static final double MIN_HORIZONTAL = 0.8;
     private static final double LIFT = 1.2;
 
-    public static final String[] DIALOGUE_MISC = new String[]{
-            "Let’s see how much ground you’re willing to surrender.",
-            "Stand your ground. I insist.",
-            "You wished to stand above me?",
-            "You brought arrows. I brought an answer.",
-            "Which of you is next to feel heroic?",
-            "Do you imagine I’ve forgotten where you are?",
-            "Another arrow. Surely this one will change everything.",
+    public static final String[] DIALOGUE_TAKE_DAMAGE = new String[] {
             "You have my attention. You will regret that.",
-            "Your numbers were more impressive a moment ago.",
-            "You’ve come so far to accomplish so little.",
-            "Your courage appears to be leaving without you."
+            "Another arrow. Surely this one will change everything."
+    };
+
+    public static final String[] DIALOGUE_KILL_PLAYER = new String[] {
+            "Which of you is next to feel heroic?",
+            "Your numbers were more impressive a moment ago."
+    };
+
+    public static final String[] DIALOGUE_TAUNT = new String[] {
+            "You've come so far to accomplish so little."
+    };
+
+    public static final String[] DIALOGUE_FIREBALL_BARRAGE = new String[] {
+            "How considerate. All in one place.",
+            "You brought arrows. I brought an answer",
+            "Let's see how much ground you're willing to surrender",
+    };
+
+    public static final String[] DIALOGUE_DIVE_BOMB = new String[] {
+            "How considerate. All in one place.",
+            "Stand your ground. I insist",
+            "You wished to stand above me?"
+    };
+
+    public static final String[] DIALOGUE_LIGHTNING_PHASE = new String[] {
+            "Your courage appears to be leaving without you.",
+            "Do you imagine I've forgotten where you are?"
     };
 
     private TMCEnderDragonManager() {}
@@ -132,9 +155,11 @@ public class TMCEnderDragonManager {
         {
             return false;
         }
+        // Health must be restored, otherwise vanilla EnderDragon#hurt will see the dragon as dead and force the DYING phase
+        enderDragon.setHealth(1.0f);
         setAwaitingDialogue(enderDragon, true);
         setDragonStage(enderDragon, EnderDragonStage.DEATH);
-        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER, 0);
+        enderDragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DEATH_STAGE_TIMER, 0);
         enderDragon.getPhaseManager().setPhase(EnderDragonPhase.LANDING_APPROACH);
         TMCEnderDragonEvents.STAGE_TRANSITION.invoker().onStageTransition(serverLevel, enderDragon, EnderDragonStage.DEATH);
         return true;
@@ -248,6 +273,41 @@ public class TMCEnderDragonManager {
         }
         Integer ticks = dragon.getAttached(attachment);
         return ticks != null ? ticks : 0;
+    }
+
+    /**
+     * Gets the location the Ender Dragon should perch at, which is directly on top of the
+     * End exit portal's bedrock pillar, ignoring any blocks placed above it
+     * @param dragon The Ender Dragon that will perch
+     * @param heightmapPos The vanilla perch location (the highest block above the exit portal)
+     * @return The location on top of the exit portal's bedrock pillar, or the given heightmap
+     * location if the exit portal could not be found
+     */
+    public static BlockPos getPortalPerchLocation(EnderDragon dragon, BlockPos heightmapPos)
+    {
+        EnderDragonFight fight = dragon.getDragonFight();
+        if (fight != null)
+        {
+            // The exit portal location is the center of the portal. The bedrock pillar is 4 blocks tall above it
+            BlockPos exitPortal = ((EnderDragonFightAccessor) fight).tmc$getExitPortalLocation();
+            if (exitPortal != null)
+            {
+                return heightmapPos.atY(exitPortal.getY() + 4);
+            }
+        }
+
+        // Fall back to the highest bedrock block in the column (e.g. dragons not tied to the fight)
+        Level level = dragon.level();
+        BlockPos.MutableBlockPos pos = heightmapPos.mutable();
+        while (pos.getY() > level.getMinY())
+        {
+            pos.move(Direction.DOWN);
+            if (level.getBlockState(pos).is(Blocks.BEDROCK))
+            {
+                return pos.above();
+            }
+        }
+        return heightmapPos;
     }
 
     public static void blastPlayer(ServerPlayer player, EnderDragon dragon)

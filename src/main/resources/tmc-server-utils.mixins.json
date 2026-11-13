@@ -4,9 +4,12 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "entity.EntityMarkerSaveMixin",
+    "entity.enderdragon.DragonPerchLocationMixin",
+    "entity.enderdragon.EnderDragonFightAccessor",
     "entity.enderdragon.EnderDragonMixin",
     "entity.enderdragon.EnderDragonPhaseMixin",
     "entity.mob.MobTickMixin",
+    "entity.serverplayer.ServerPlayerMixin",
     "gamerules.exposions.AbstractMinecartMixin",
     "gamerules.exposions.EntityMixin",
     "gamerules.exposions.ServerExplosionMixin",

@@ -2,7 +2,9 @@ package tmc.entity.enderdragon.phase;
 
 import com.mojang.math.Transformation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,14 +23,18 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.codec.enderdragon.DialogueCooldownData;
 import tmc.codec.enderdragon.LightningBlastData;
 import tmc.damagetypes.TMCDamageTypes;
+import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.WarningManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,26 +57,33 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final double APPROACH_AGILITY = 0.12;
     private static final int APPROACH_TIMEOUT = 120;
 
-    // ---- Hover ----
     private static final double BRAKE = 0.8;
     private static final double BOB_AMPLITUDE = 0.04;
 
-    // ---- Timing ----
-    private static final int WINDUP_TICKS = 20;
-    private static final int CHARGE_TICKS = 60;
-    private static final int LINGER_TICKS = 20;
+    public static final int WINDUP_TICKS = 20;
+    public static final int CHARGE_TICKS = 60;
+    public static final int LINGER_TICKS = 20;
     private static final int SPARK_INTERVAL = 4;
     public static final int COOLDOWN_TICKS = 600;
 
     // ---- Zones ----
     private static final int ZONE_SIZE = 5;
     private static final int ZONE_GAP = 1;
-    private static final double TARGET_RANGE = 150.0;
-    private static final int FILLER_PER_PLAYER = 3;
+    public static final double TARGET_RANGE = 200;
+    private static final int FILLER_PER_PLAYER = 10;
     private static final int FILLER_SPREAD = 12;
     private static final int FILLER_ATTEMPTS = 12;
-    private static final int MAX_ZONES = 32;
+    private static final int MAX_ZONES = 96;
     private static final double MAX_GROUND_DIFF = 10.0;
+
+    /// Starts this far above the player, so raised ground still counts
+    private static final int FLOOR_SEARCH_UP = 4;
+
+    /// A player further up than this gets no zone
+    private static final int FLOOR_SEARCH_DOWN = 48;
+    private static final double SUPPORT_TOLERANCE = 0.5;
+    private static final double MIN_PLAYER_ZONE_SUPPORT = 0.3;
+    private static final double MIN_FILLER_ZONE_SUPPORT = 0.8;
 
     private static final float LIGHTNING_DAMAGE_MAX_HEALTH = 0.5F;
     private static final double SHARED_BOLT_RANGE = 2.0;
@@ -100,32 +113,32 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         return bolt;
     }
 
-    private static boolean tooClose(List<BlockPos> zones, int x, int z)
+    private static boolean tooClose(List<Vec3> zones, int x, int z)
     {
         int min = ZONE_SIZE + ZONE_GAP;
-        for (BlockPos c : zones)
+        for (Vec3 c : zones)
         {
-            if (Math.abs(c.getX() - x) < min && Math.abs(c.getZ() - z) < min) return true;
+            if (Math.abs(c.x() - x) < min && Math.abs(c.z() - z) < min) return true;
         }
         return false;
     }
 
-    /** Top of the ground at the zone's centre, or the player's own height over the void / pillars / roofs. */
-    private static int groundY(ServerLevel level, int x, int z, double referenceY)
-    {
-        int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-        if (ground <= level.getMinY() || Math.abs(ground - referenceY) > MAX_GROUND_DIFF) return Mth.floor(referenceY);
-        return ground;
-    }
+//    /** Top of the ground at the zone's centre, or the player's own height over the void / pillars / roofs. */
+//    private static int groundY(ServerLevel level, int x, int z, double referenceY)
+//    {
+//        int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+//        if (ground <= level.getMinY() || Math.abs(ground - referenceY) > MAX_GROUND_DIFF) return Mth.floor(referenceY);
+//        return ground;
+//    }
 
-    private static Vec3 zonesCentroid(List<BlockPos> zones)
+    private static Vec3 zonesCentroid(List<Vec3> zones)
     {
         double x = 0, y = 0, z = 0;
-        for (BlockPos c : zones)
+        for (Vec3 c : zones)
         {
-            x += c.getX() + ZONE_SIZE * 0.5;
-            y += c.getY();
-            z += c.getZ() + ZONE_SIZE * 0.5;
+            x += c.x() + ZONE_SIZE * 0.5;
+            y += c.y();
+            z += c.z() + ZONE_SIZE * 0.5;
         }
         int n = Math.max(1, zones.size());
         return new Vec3(x / n, y / n, z / n);
@@ -147,6 +160,93 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         }
     }
 
+    /**
+     * Finds the floor under a whole zone, or null if there isn't enough of one.
+     * <p>
+     * Every one of the ZONE_SIZE x ZONE_SIZE columns is scanned for its own floor. The zone then sits
+     * at the height most of its columns share, and is rejected if too few columns are at that height
+     * (void, an island edge, a pillar side, a big crater, unloaded chunks). It never falls back to
+     * the player's own Y, which is what used to leave markers floating under flying or falling players.
+     *
+     * @return the zone's min corner, with Y = the exact floor surface (slab and snow-layer tops included)
+     */
+    @Nullable
+    private static Vec3 anchorZone(ServerLevel level, int minX, int minZ, double referenceY, double minSupport)
+    {
+        int columns = ZONE_SIZE * ZONE_SIZE;
+        double[] floors = new double[columns];
+        int found = 0;
+        for (int dx = 0; dx < ZONE_SIZE; dx++)
+        {
+            for (int dz = 0; dz < ZONE_SIZE; dz++)
+            {
+                double floor = floorAt(level, minX + dx, minZ + dz, referenceY);
+                if (!Double.isNaN(floor))
+                {
+                    floors[found++] = floor;
+                }
+            }
+        }
+
+        if (found == 0)
+        {
+            return null;
+        }
+
+        double best = Double.NaN;
+        int bestCount = 0;
+        for (int i = 0; i < found; i++)
+        {
+            int count = 0;
+            for (int j = 0; j < found; j++)
+            {
+                if (Math.abs(floors[j] - floors[i]) <= SUPPORT_TOLERANCE)
+                {
+                    count++;
+                }
+            }
+            if (count > bestCount || (count == bestCount && Math.abs(floors[i] - referenceY) < Math.abs(best - referenceY)))
+            {
+                best = floors[i];
+                bestCount = count;
+            }
+        }
+
+        if ((double) bestCount / columns < minSupport)
+        {
+            return null;
+        }
+        return new Vec3(minX, best, minZ);
+    }
+
+    private static double floorAt(ServerLevel level, int x, int z, double referenceY)
+    {
+        int top = Math.min(Mth.floor(referenceY) + FLOOR_SEARCH_UP, level.getMaxY());
+        int bottom = Math.min(Mth.floor(referenceY) - FLOOR_SEARCH_DOWN, level.getMinY());
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
+        if (!level.isLoaded(pos))
+        {
+            return Double.NaN; // Don't force-load chunks just to place a marker
+        }
+
+        boolean openAbove = false;
+        for (int y = top; y >= bottom; y--)
+        {
+            pos.setY(y);
+            VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);
+            if (shape.isEmpty())
+            {
+                openAbove = true;
+            } else if (openAbove)
+            {
+                return y + Math.min(1.0, shape.max(Direction.Axis.Y)); // Fences, etc. count as a full block
+            }
+        }
+
+        return Double.NaN;
+    }
+
     // Not saved: rebuilt from the zones in the attachment if they go missing (reload, chunk unload)
     private final List<Display.BlockDisplay> markers = new ArrayList<>();
 
@@ -164,10 +264,10 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     @Override
     public void begin()
     {
-        LightningBlastData data = this.getData();
-        if (!data.isActive())
+        LightningBlastData lightningBlastData = this.getData();
+        if (!lightningBlastData.isActive())
         {
-            data.start(dragon.getDeltaMovement());
+            lightningBlastData.start(this.dragon.getDeltaMovement());
         }
 
         Level level = this.dragon.level();
@@ -177,9 +277,18 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         }
         if (level instanceof ServerLevel serverLevel)
         {
-            String dialogue = TMCEnderDragonManager.DIALOGUE_MISC[10];
+            DialogueCooldownData dialogueCooldownData = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(this.dragon, EnderDragonStage.STAGE_2);
+            if (!dialogueCooldownData.isAttackReady(ticks))
+            {
+                return;
+            }
+            Random random = new Random();
+            String dialogue = TMCEnderDragonManager.DIALOGUE_LIGHTNING_PHASE[random.nextInt(TMCEnderDragonManager.DIALOGUE_LIGHTNING_PHASE.length)];
             TMCServerUtils.messageAllPlayers(serverLevel, player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
                     TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setAttackCooldown(ticks + DialogueCooldownData.ATTACK_COOLDOWN_TICKS));
         }
     }
 
@@ -198,10 +307,15 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         // begin() has no level, so the perch point is worked out here
         if (data.getPerchPos().isEmpty())
         {
-            data.setPerchPos(computePerch(level));
+            data.setPerchPos(this.computePerch(level));
         }
 
         data.updateTicks();
+        int totalTicks = data.getTotalTicks();
+        level.getPlayers(p -> p.distanceTo(this.dragon) <= TARGET_RANGE).forEach(p ->
+        {
+            WarningManager.warnPlayerLightningBlast(p, totalTicks, p.distanceTo(this.dragon));
+        });
         switch (data.getStage())
         {
             case APPROACH -> tickApproach(level, data);
@@ -253,7 +367,7 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
 
         if (data.getStageTicks() >= WINDUP_TICKS)
         {
-            List<BlockPos> zones = this.buildZones(level);
+            List<Vec3> zones = this.buildZones(level);
             if (zones.isEmpty())
             {
                 this.abort(); // nobody in range
@@ -267,18 +381,18 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private void tickCharge(ServerLevel level, LightningBlastData data)
     {
         this.hover(data);
-        List<BlockPos> zones = data.getZones();
+        List<Vec3> zones = data.getZones();
         this.ensureMarkers(level, zones);
         this.faceToward(zonesCentroid(zones).subtract(dragon.position()), 0.2F);
 
         if (data.getStageTicks() % SPARK_INTERVAL == 0)
         {
             RandomSource random = this.dragon.getRandom();
-            for (BlockPos corner : zones)
+            for (Vec3 corner : zones)
             {
                 level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                        corner.getX() + random.nextDouble() * ZONE_SIZE, corner.getY() + 0.2,
-                        corner.getZ() + random.nextDouble() * ZONE_SIZE,
+                        corner.x() + random.nextDouble() * ZONE_SIZE, corner.y() + 0.2,
+                        corner.z() + random.nextDouble() * ZONE_SIZE,
                         2, 0.1, 0.1, 0.1, 0.05);
             }
             level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
@@ -301,13 +415,13 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         {
             this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
             Integer stage2Ticks = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
-            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA, lightningBlastData -> lightningBlastData.setCooldown(stage2Ticks + COOLDOWN_TICKS));
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA, lightningBlastData -> lightningBlastData.setCooldown(stage2Ticks + COOLDOWN_TICKS).resetTotalTicks());
         }
     }
 
     private void strike(ServerLevel level, LightningBlastData data)
     {
-        List<BlockPos> zones = data.getZones();
+        List<Vec3> zones = data.getZones();
         boolean[] occupied = new boolean[zones.size()];
         List<LightningBolt> bolts = new ArrayList<>();
 
@@ -340,7 +454,7 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
 
         // Empty zones: sparks everywhere, an impact crack at a few of them
         RandomSource random = this.dragon.getRandom();
-        List<BlockPos> empty = new ArrayList<>();
+        List<Vec3> empty = new ArrayList<>();
         for (int i = 0; i < zones.size(); i++)
         {
             if (!occupied[i])
@@ -348,16 +462,16 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
                 empty.add(zones.get(i));
             }
         }
-        for (BlockPos corner : empty)
+        for (Vec3 corner : empty)
         {
             level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                    corner.getX() + ZONE_SIZE * 0.5, corner.getY() + 0.5, corner.getZ() + ZONE_SIZE * 0.5,
+                    corner.x() + ZONE_SIZE * 0.5, corner.y() + 0.5, corner.z() + ZONE_SIZE * 0.5,
                     20, ZONE_SIZE * 0.3, 0.3, ZONE_SIZE * 0.3, 0.3);
         }
         for (int i = 0; i < Math.min(IMPACT_SOUND_LIMIT, empty.size()); i++)
         {
-            BlockPos corner = empty.get(random.nextInt(empty.size()));
-            level.playSound(null, corner.getX() + ZONE_SIZE * 0.5, corner.getY(), corner.getZ() + ZONE_SIZE * 0.5,
+            Vec3 corner = empty.get(random.nextInt(empty.size()));
+            level.playSound(null, corner.x() + ZONE_SIZE * 0.5, corner.y(), corner.z() + ZONE_SIZE * 0.5,
                     SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + random.nextFloat() * 0.2F);
         }
 
@@ -376,15 +490,15 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
      * covers them), then FILLER_PER_PLAYER filler zones scattered around each player. Filler zones
      * always leave a ZONE_GAP lane to every other zone, so there's a safe way out.
      */
-    private List<BlockPos> buildZones(ServerLevel level)
+    private List<Vec3> buildZones(ServerLevel level)
     {
         RandomSource random = this.dragon.getRandom();
         BlockPos origin = this.dragon.getFightOrigin();
         List<ServerPlayer> targets = new ArrayList<>(level.getPlayers(p -> isValidTarget(p)
                 && Mth.square(p.getX() - origin.getX()) + Mth.square(p.getZ() - origin.getZ()) <= TARGET_RANGE * TARGET_RANGE));
-        shuffle(targets, random); // so MAX_ZONES doesn't always favour the same players
+        shuffle(targets, random); // so MAX_ZONES doesn't always favor the same players
 
-        List<BlockPos> zones = new ArrayList<>();
+        List<Vec3> zones = new ArrayList<>();
         int half = ZONE_SIZE / 2;
 
         for (ServerPlayer p : targets)
@@ -394,9 +508,15 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
             {
                 continue;
             }
-            int x = p.getBlockX() - half;
-            int z = p.getBlockZ() - half;
-            zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
+            Vec3 zone = anchorZone(level, p.getBlockX() - half, p.getBlockZ() - half, p.getY(), MIN_PLAYER_ZONE_SUPPORT);
+            if (zone == null)
+            {
+                continue;
+            }
+            zones.add(zone);
+//            int x = p.getBlockX() - half;
+//            int z = p.getBlockZ() - half;
+//            zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
         }
 
         for (ServerPlayer p : targets)
@@ -415,7 +535,13 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
                     {
                         continue;
                     }
-                    zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
+                    Vec3 zone = anchorZone(level, x, z, p.getY(), MIN_FILLER_ZONE_SUPPORT);
+                    if (zone == null)
+                    {
+                        continue;
+                    }
+                    zones.add(zone);
+//                    zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
                     break;
                 }
             }
@@ -424,12 +550,12 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     }
 
     /** Index of a zone whose X/Z square contains the point, or -1. Height is ignored on purpose. */
-    private static int zoneIndexOf(List<BlockPos> zones, double x, double z)
+    private static int zoneIndexOf(List<Vec3> zones, double x, double z)
     {
         for (int i = 0; i < zones.size(); i++)
         {
-            BlockPos c = zones.get(i);
-            if (x >= c.getX() && x < c.getX() + ZONE_SIZE && z >= c.getZ() && z < c.getZ() + ZONE_SIZE)
+            Vec3 c = zones.get(i);
+            if (x >= c.x() && x < c.x() + ZONE_SIZE && z >= c.z() && z < c.z() + ZONE_SIZE)
             {
                 return i;
             }
@@ -437,12 +563,12 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         return -1;
     }
 
-    private void spawnMarkers(ServerLevel level, List<BlockPos> zones)
+    private void spawnMarkers(ServerLevel level, List<Vec3> zones)
     {
         removeMarkers();
         for (int i = 0; i < zones.size(); i++)
         {
-            BlockPos corner = zones.get(i);
+            Vec3 corner = zones.get(i);
             Display.BlockDisplay marker = EntityTypes.BLOCK_DISPLAY.create(level, EntitySpawnReason.TRIGGERED);
             if (marker == null)
             {
@@ -456,7 +582,9 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
             marker.setBrightnessOverride(Brightness.FULL_BRIGHT);
             marker.setViewRange(MARKER_VIEW_RANGE);
             marker.addTag(MARKER_TAG);
-            marker.snapTo(corner.getX(), corner.getY() + MARKER_LIFT + i * MARKER_STACK, corner.getZ(), 0.0F, 0.0F);
+            marker.snapTo(corner.x(), corner.y() + MARKER_LIFT + i * MARKER_STACK, corner.z(), 0.0F, 0.0F);
+            marker.setGlowingTag(true);
+            marker.setGlowColorOverride(TextColor.LIGHT_PURPLE.getValue());
 
             level.addFreshEntity(marker);
             this.markers.add(marker);
@@ -464,7 +592,7 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     }
 
     /** Respawns the markers if any went missing (world reload mid-charge, chunk unload). */
-    private void ensureMarkers(ServerLevel level, List<BlockPos> zones)
+    private void ensureMarkers(ServerLevel level, List<Vec3> zones)
     {
         boolean missing = this.markers.size() != zones.size();
         for (Display.BlockDisplay marker : this.markers)

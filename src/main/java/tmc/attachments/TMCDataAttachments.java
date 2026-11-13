@@ -45,7 +45,7 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Ender Dragon data for tracking time in ticks on {@linkplain EnderDragonStage#STAGE_2 stage 2}
+     * Ender Dragon data for tracking time in ticks on {@linkplain EnderDragonStage#STAGE_2 Stage 2}
      */
     public static final AttachmentType<Integer> ENDER_DRAGON_STAGE_2_TIMER = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_stage_2_timer"),
@@ -86,7 +86,7 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking data during the dive bomb phase of the Ender Dragon in stage 2
+     * Attachment used for tracking data during the dive bomb phase of the Ender Dragon in Stage 2
      */
     public static final AttachmentType<DiveBombData> ENDER_DRAGON_DIVE_BOMB_DATA = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_dive_bomb_data"),
@@ -96,7 +96,7 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking data during the fireball barrage phase of the Ender Dragon in stage 2
+     * Attachment used for tracking data during the fireball barrage phase of the Ender Dragon in Stage 2
      */
     public static final AttachmentType<FireballBarrageData> ENDER_DRAGON_FIREBALL_BARRAGE_DATA = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_fireball_barrage_data"),
@@ -106,7 +106,7 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking data during the lightning blast phase of the Ender Dragon in stage 2
+     * Attachment used for tracking data during the lightning blast phase of the Ender Dragon in Stage 2
      */
     public static final AttachmentType<LightningBlastData> ENDER_DRAGON_LIGHTNING_BLAST_DATA = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_lightning_blast_data"),
@@ -116,13 +116,23 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking data during the "The Sky Answers to Me" attack at 50% HP during phase 2
+     * Attachment used for tracking data during the "The Sky Answers to Me" attack at 50% HP during Stage 2
      */
     public static final AttachmentType<SkyAnswersData> ENDER_DRAGON_SKY_ANSWERS_DATA = AttachmentRegistry.create(
             TMCServerUtils.of("ender_dragon_sky_answers_data"),
             builder -> builder
                     .initializer(SkyAnswersData::new)
                     .persistent(SkyAnswersData.CODEC)
+    );
+
+    /**
+     * Attachments used for tracking data during miscellaneous dialogue throughout Stage 2
+     */
+    public static final AttachmentType<DialogueCooldownData> ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_misc_dialogue_cooldown_data"),
+            builder -> builder
+                    .initializer(DialogueCooldownData::new)
+                    .persistent(DialogueCooldownData.CODEC)
     );
 
     /**
@@ -133,6 +143,18 @@ public class TMCDataAttachments {
             enderDragonLeaderboardBuilder -> enderDragonLeaderboardBuilder
                     .initializer(EnderDragonLeaderboard::new)
                     .persistent(EnderDragonLeaderboard.CODEC)
+    );
+
+    /**
+     * Attachment used for tracking who has warning titles currently.
+     * <p>Returns true if the player has warnings on their screen</p>
+     * <p>Returns false otherwise</p>
+     */
+    public static final AttachmentType<Boolean> PLAYER_WARNING_TITLES_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("player_warning_titles_data"),
+            builder -> builder
+                    .initializer(() -> false)
+                    .persistent(Codec.BOOL)
     );
 
     public static void initialize() {}

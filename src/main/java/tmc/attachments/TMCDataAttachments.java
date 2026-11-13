@@ -4,7 +4,8 @@ import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import tmc.TMCServerUtils;
-import tmc.codec.AttackerHistory;
+import tmc.codec.AttackerHistoryData;
+import tmc.codec.InvolvedPlayersData;
 import tmc.codec.enderdragon.*;
 import tmc.entity.enderdragon.EnderDragonStage;
 
@@ -75,14 +76,14 @@ public class TMCDataAttachments {
     );
 
     /**
-     * Attachment used for tracking UUIDs of entities that attacked this one.
+     * Attachment used for tracking UUIDs of entities that attacked this one, alongside the damage they deal to it.
      * Does not persist on death.
      */
-    public static final AttachmentType<AttackerHistory> LOGGED_ATTACKERS = AttachmentRegistry.create(
+    public static final AttachmentType<AttackerHistoryData> LOGGED_ATTACKERS = AttachmentRegistry.create(
             TMCServerUtils.of("logged_attackers"),
             attackerHistoryBuilder -> attackerHistoryBuilder
-                    .initializer(AttackerHistory::new)
-                    .persistent(AttackerHistory.CODEC)
+                    .initializer(AttackerHistoryData::new)
+                    .persistent(AttackerHistoryData.CODEC)
     );
 
     /**
@@ -155,6 +156,24 @@ public class TMCDataAttachments {
             builder -> builder
                     .initializer(() -> false)
                     .persistent(Codec.BOOL)
+    );
+
+    /**
+     * Attachment used for tracking players under a tick timestamp.
+     * <p>Primarily used for tracking involved players during the Ender Dragon fight</p>
+     */
+    public static final AttachmentType<InvolvedPlayersData> INVOLVED_PLAYERS_DATA = AttachmentRegistry.create(
+            TMCServerUtils.of("involved_players_data"),
+            builder -> builder
+                    .initializer(InvolvedPlayersData::new)
+                    .persistent(InvolvedPlayersData.CODEC)
+    );
+
+    public static final AttachmentType<Integer> PLAYER_KILLS = AttachmentRegistry.create(
+            TMCServerUtils.of("player_kills"),
+            builder -> builder
+                    .initializer(() -> 0)
+                    .persistent(Codec.INT)
     );
 
     public static void initialize() {}

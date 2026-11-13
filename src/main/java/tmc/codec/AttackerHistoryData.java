@@ -6,23 +6,23 @@ import net.minecraft.core.UUIDUtil;
 
 import java.util.*;
 
-public record AttackerHistory(HashMap<UUID, Float> attackerUuids) {
+public record AttackerHistoryData(HashMap<UUID, Float> attackerUuids) {
 
-    public static final Codec<AttackerHistory> CODEC = RecordCodecBuilder.create(
+    public static final Codec<AttackerHistoryData> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
                     Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.FLOAT)
                             .xmap(HashMap::new, map -> map)
                             .fieldOf("attacker_history")
-                            .forGetter(AttackerHistory::attackerUuids)
-            ).apply(instance, AttackerHistory::new)
+                            .forGetter(AttackerHistoryData::attackerUuids)
+            ).apply(instance, AttackerHistoryData::new)
     );
 
-    public AttackerHistory()
+    public AttackerHistoryData()
     {
         this(new HashMap<>());
     }
 
-    public void updateAttacker(UUID uuid, float damage)
+    public AttackerHistoryData updateAttacker(UUID uuid, float damage)
     {
         if (this.attackerUuids.containsKey(uuid) && this.attackerUuids.get(uuid) != null)
         {
@@ -33,8 +33,9 @@ public record AttackerHistory(HashMap<UUID, Float> attackerUuids) {
                 }
                 return null;
             });
-            return;
+            return this;
         }
         this.attackerUuids.put(uuid, damage);
+        return this;
     }
 }

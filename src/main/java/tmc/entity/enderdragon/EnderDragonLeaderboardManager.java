@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.AttackerHistory;
+import tmc.codec.AttackerHistoryData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 
 import java.text.DecimalFormat;
@@ -278,7 +278,7 @@ public class EnderDragonLeaderboardManager {
     public static void printFightLeaderboard(EnderDragon dragon, ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();
-        AttackerHistory leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
+        AttackerHistoryData leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
 
         List<Map.Entry<UUID, Float>> fullList = leaderboard.attackerUuids().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())

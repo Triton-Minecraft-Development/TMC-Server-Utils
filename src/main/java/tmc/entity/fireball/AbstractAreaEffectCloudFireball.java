@@ -1,18 +1,23 @@
 package tmc.entity.fireball;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.ProjectileDeflection;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
+import tmc.TMCServerUtils;
 import tmc.entity.areaeffectcloud.TMCAreaEffectCloud;
 
 import java.util.List;
@@ -50,14 +55,21 @@ public abstract class AbstractAreaEffectCloudFireball extends LargeFireball {
         return ((entity, integer) -> {});
     }
 
-    /**
-     * Re-implementation of {@linkplain net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball#onHit(HitResult) Dragon fireball's onHit method}
-     * <p>
-     *     Calls this class's version of {@linkplain Projectile#onHit(HitResult) Projectile's onHit} to make this projectile non-deflectable
-     *     and uses the dragon fireball's area effect cloud logic to create an area effect cloud at the area of impact.
-     * </p>
-     * @param hitResult
-     */
+    protected DamageSource impactDamageSource(ServerLevel serverLevel, LivingEntity hitEntity, Entity owner)
+    {
+        return null;
+    }
+
+    protected float impactDamage(Entity owner)
+    {
+        return 0f;
+    }
+
+    protected float impactDamageRadius()
+    {
+        return this.initialRadius();
+    }
+
     @Override
     protected void onHit(HitResult hitResult)
     {
@@ -65,11 +77,33 @@ public abstract class AbstractAreaEffectCloudFireball extends LargeFireball {
         {
             return;
         }
-        this.onHitProjectile(hitResult);
+        super.onHit(hitResult);
+        if (this.impactDamageRadius() > 0)
+        {
+            for (LivingEntity livingEntity : TMCServerUtils.getEntitiesInRadius(this, LivingEntity.class, this.impactDamageRadius()))
+            {
+                if (this.owner == null || this.owner.matches(livingEntity))
+                {
+                    continue;
+                }
+                if (!(this.level() instanceof ServerLevel serverLevel))
+                {
+                    return;
+                }
+                DamageSource damageSource = this.impactDamageSource(serverLevel, livingEntity, this.getOwner());
+                if (damageSource == null)
+                {
+                    return;
+                }
+                livingEntity.hurtServer(serverLevel, damageSource, this.impactDamage(this.getOwner()));
+                EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity, damageSource);
+            }
+        }
         if (hitResult.getType() == HitResult.Type.ENTITY && this.ownedBy(((EntityHitResult)hitResult).getEntity()))
         {
             return;
         }
+
         List<LivingEntity> entitiesOfClass = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.0, 2.0, 4.0));
         TMCAreaEffectCloud cloud = new TMCAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ(), this.onVictimInAreaEffectCloudTick());
         Entity owner = this.getOwner();
@@ -102,34 +136,66 @@ public abstract class AbstractAreaEffectCloudFireball extends LargeFireball {
         this.discard();
     }
 
+//    @Override
+//    protected void onHitEntity(EntityHitResult hitResult)
+//    {
+//        Level level = this.level();
+//        if (!(level instanceof ServerLevel serverLevel))
+//        {
+//            return;
+//        }
+//        Entity entity = hitResult.getEntity();
+//        Entity owner = this.getOwner();
+//        DamageSource damageSource = this.impactDamageSource(serverLevel, entity, owner);
+//        if (damageSource == null)
+//        {
+//            return;
+//        }
+//        entity.hurtServer(serverLevel, damageSource, this.impactDamage(owner));
+//        EnchantmentHelper.doPostAttackEffects(serverLevel, entity, damageSource);
+//    }
+
     @Override
     protected boolean shouldBurn()
     {
         return false;
     }
 
-    /**
-     * Re-implementation of {@linkplain net.minecraft.world.entity.projectile.Projectile#onHit(HitResult) Projectile's onHit method}.
-     * This is to allow the projectile to be non-deflectable (similar to the dragon fireball) since the original function checks if
-     * the projectile has the {@linkplain net.minecraft.tags.EntityTypeTags#REDIRECTABLE_PROJECTILE redirectable projectile tag}
-     * @param hitResult
-     */
-    private void onHitProjectile(HitResult hitResult)
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float damage)
     {
-        HitResult.Type type = hitResult.getType();
-        switch (type)
+        return false;
+    }
+
+    @Override
+    public boolean deflect(ProjectileDeflection deflection, @Nullable Entity deflectingEntity, @Nullable EntityReference<Entity> newOwner, boolean byAttack, Vec3 power)
+    {
+        if (this.level().isClientSide())
         {
-            case ENTITY -> {
-                EntityHitResult entityHitResult = (EntityHitResult) hitResult;
-                this.onHitEntity(entityHitResult);
-                this.level().gameEvent(GameEvent.PROJECTILE_LAND, hitResult.getLocation(), GameEvent.Context.of(this, null));
-            }
-            case BLOCK -> {
-                BlockHitResult blockHitResult = (BlockHitResult) hitResult;
-                this.onHitBlock(blockHitResult);
-                BlockPos target = blockHitResult.getBlockPos();
-                this.level().gameEvent(GameEvent.PROJECTILE_LAND, target, GameEvent.Context.of(this, this.level().getBlockState(target)));
-            }
+            return super.deflect(deflection, deflectingEntity, newOwner, byAttack, power);
         }
+        return false;
+    }
+
+    @Override
+    public boolean deflect(ProjectileDeflection deflection, @Nullable Entity deflectingEntity, @Nullable EntityReference<Entity> newOwner, boolean byAttack, double power)
+    {
+        if (this.level().isClientSide())
+        {
+            return super.deflect(deflection, deflectingEntity, newOwner, byAttack, power);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean ignoreExplosion(Explosion explosion)
+    {
+        return true;
+    }
+
+    @Override
+    public boolean shouldBeSaved()
+    {
+        return true;
     }
 }

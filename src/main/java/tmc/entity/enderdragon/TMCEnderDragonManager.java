@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
-import tmc.codec.AttackerHistory;
+import tmc.codec.InvolvedPlayersData;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
@@ -82,29 +82,57 @@ public class TMCEnderDragonManager {
 
     public static void logPlayerAttacker(EnderDragon dragon, ServerPlayer player, float damage)
     {
-        if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
+        if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS) ||
+                !dragon.hasAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA) ||
+                !dragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER))
         {
             return;
         }
-        dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistory ->
-        {
-            attackerHistory.updateAttacker(player.getUUID(), damage);
-            return attackerHistory;
-        });
+        dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistoryData -> attackerHistoryData.updateAttacker(player.getUUID(), damage));
+        int ticks = getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
+        dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
     }
 
     public static HashMap<UUID, Float> getAllAttackers(EnderDragon dragon)
     {
-        if (!dragon.hasAttached(TMCDataAttachments.LOGGED_ATTACKERS))
-        {
-            return new HashMap<>();
-        }
-        AttackerHistory attackerHistory = dragon.getAttached(TMCDataAttachments.LOGGED_ATTACKERS);
-        if (attackerHistory == null)
-        {
-            return new HashMap<>();
-        }
-        return new HashMap<>(attackerHistory.attackerUuids());
+        return new HashMap<>(dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS).attackerUuids());
+
+    }
+
+    private static Integer getActiveAttackerCount(EnderDragon dragon)
+    {
+        return dragon.getAttachedOrCreate(TMCDataAttachments.INVOLVED_PLAYERS_DATA).players().size();
+    }
+
+    /**
+     * Melee damage scalar for Ender Dragon during Stage 2
+     * @param dragon
+     * @return The scalar to be applied for melee damage
+     */
+    public static float getMeleeScalar(EnderDragon dragon)
+    {
+        int active = getActiveAttackerCount(dragon);
+
+        // Damage scaling for this damage type is based on the following formula:
+        // (x / (x + 5)) * 73.4
+        // Where x = the # of active attackers
+        // https://www.desmos.com/calculator/mnn0sxhoyj
+
+        float f = ((float) active / (active + 5f)) * 73.4f;
+        return (f / 100) + 1;
+    }
+
+    public static float getMagicScalar(EnderDragon dragon)
+    {
+        int active = getActiveAttackerCount(dragon);
+
+        // Damage scaling for this damage type is based on the following formula:
+        // (x / (x + 4.2)) * 19
+        // Where x = the # of active attackers
+        // https://www.desmos.com/calculator/wpafrhrgus
+
+        float f = ((float) active / (active + 4.2f)) * 19f;
+        return (f / 100) + 1;
     }
 
     /**

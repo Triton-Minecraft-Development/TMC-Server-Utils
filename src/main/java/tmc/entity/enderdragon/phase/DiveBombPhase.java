@@ -276,7 +276,7 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
             double d = serverPlayer.position().distanceTo(targetPos);
             double falloff = 1.0 - d / IMPACT_RADIUS;
 
-            serverPlayer.hurtServer(level, level.damageSources().explosion(this.dragon, this.dragon), (float) (IMPACT_DAMAGE * falloff));
+            serverPlayer.hurtServer(level, level.damageSources().explosion(this.dragon, this.dragon), (float) (IMPACT_DAMAGE * falloff * TMCEnderDragonManager.getMeleeScalar(this.dragon)));
 
             Vec3 away = new Vec3(serverPlayer.getX() - targetPos.x, 0, serverPlayer.getZ() - targetPos.z);
             if (away.lengthSqr() <= 1.0E-4)

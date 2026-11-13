@@ -20,6 +20,7 @@ import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.InvolvedPlayersData;
+import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
@@ -89,7 +90,12 @@ public class TMCEnderDragonManager {
         {
             return;
         }
-        dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistoryData -> attackerHistoryData.updateAttacker(player.getUUID(), damage));
+        ServerLevel level = player.level().getServer().overworld();
+        EnderDragonLeaderboard leaderboard = level.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+        if (!leaderboard.isPlayerBanned(player.getUUID()))
+        {
+            dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistoryData -> attackerHistoryData.updateAttacker(player.getUUID(), damage));
+        }
         int ticks = getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
         dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
     }

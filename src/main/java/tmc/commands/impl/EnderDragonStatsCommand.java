@@ -12,7 +12,6 @@ import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
 import tmc.attachments.TMCDataAttachments;
@@ -31,6 +30,8 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
         return b ? ChatFormatting.GREEN : ChatFormatting.RED;
     }
 
+    private static final Component BAN_MESSAGE = Component.literal(ChatFormatting.RED + "Your Ender Dragon stats are currently banned and cannot be viewed/updated");
+
     public EnderDragonStatsCommand()
     {
         CommandRegistrationCallback.EVENT.register(this);
@@ -43,6 +44,10 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                 Commands.literal(NAME)
                         .requires(commandSourceStack ->
                         {
+                            if (commandSourceStack.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                            {
+                                return true;
+                            }
                             ServerLevel level = commandSourceStack.getLevel();
                             if (commandSourceStack.isPlayer() && commandSourceStack.getEntity() instanceof ServerPlayer player)
                             {
@@ -59,6 +64,11 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                             if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer player)
                                             {
                                                 EnderDragonLeaderboard leaderboard = sourceStack.getLevel().getServer().overworld().getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+                                                if (leaderboard.isPlayerBanned(player.getUUID()))
+                                                {
+                                                    player.sendSystemMessage(BAN_MESSAGE);
+                                                    return Command.SINGLE_SUCCESS;
+                                                }
                                                 EnderDragonLeaderboard.PlayerStats stats = leaderboard.getPlayerStats(player);
                                                 player.sendSystemMessage(EnderDragonLeaderboardManager.getDragonsKilledMessage(stats.slays()));
                                                 return Command.SINGLE_SUCCESS;
@@ -74,6 +84,11 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                             if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer player)
                                             {
                                                 EnderDragonLeaderboard leaderboard = sourceStack.getLevel().getServer().overworld().getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+                                                if (leaderboard.isPlayerBanned(player.getUUID()))
+                                                {
+                                                    player.sendSystemMessage(BAN_MESSAGE);
+                                                    return Command.SINGLE_SUCCESS;
+                                                }
                                                 EnderDragonLeaderboard.PlayerStats stats = leaderboard.getPlayerStats(player);
                                                 player.sendSystemMessage(EnderDragonLeaderboardManager.getLifetimeDragonDamageMessage(stats.bestDamage(), stats.slays()));
                                                 return Command.SINGLE_SUCCESS;
@@ -89,6 +104,11 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                             if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer player)
                                             {
                                                 EnderDragonLeaderboard leaderboard = sourceStack.getLevel().getServer().overworld().getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+                                                if (leaderboard.isPlayerBanned(player.getUUID()))
+                                                {
+                                                    player.sendSystemMessage(BAN_MESSAGE);
+                                                    return Command.SINGLE_SUCCESS;
+                                                }
                                                 EnderDragonLeaderboard.PlayerStats stats = leaderboard.getPlayerStats(player);
                                                 player.sendSystemMessage(EnderDragonLeaderboardManager.getBestDamageMessage(stats.bestDamage()));
                                                 return Command.SINGLE_SUCCESS;
@@ -159,6 +179,58 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                                         })
                                         )
                         )
+                        .then(
+                                LiteralArgumentBuilder.<CommandSourceStack>literal("ban")
+                                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                        .then(
+                                                Commands.argument("targets", GameProfileArgument.gameProfile())
+                                                        .executes(context ->
+                                                        {
+                                                            CommandSourceStack sourceStack = context.getSource();
+                                                            Collection<NameAndId> profiles = GameProfileArgument.getGameProfiles(context, "targets");
+                                                            for (NameAndId nameAndId : profiles)
+                                                            {
+                                                                ServerLevel overworld = sourceStack.getLevel().getServer().overworld();
+                                                                overworld.modifyAttached(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD, leaderboard ->
+                                                                {
+                                                                    UUID uuid = nameAndId.id();
+                                                                    leaderboard.banPlayer(uuid);
+
+                                                                    sourceStack.sendSystemMessage(Component.literal(ChatFormatting.RED + "Banned Ender Dragon data for player '" + nameAndId.name() + "'"));
+                                                                    return leaderboard;
+                                                                });
+                                                            }
+
+                                                            return Command.SINGLE_SUCCESS;
+                                                        })
+                                        )
+                        )
+                        .then(
+                                LiteralArgumentBuilder.<CommandSourceStack>literal("pardon")
+                                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                        .then(
+                                                Commands.argument("targets", GameProfileArgument.gameProfile())
+                                                        .executes(context ->
+                                                        {
+                                                            CommandSourceStack sourceStack = context.getSource();
+                                                            Collection<NameAndId> profiles = GameProfileArgument.getGameProfiles(context, "targets");
+                                                            for (NameAndId nameAndId : profiles)
+                                                            {
+                                                                ServerLevel overworld = sourceStack.getLevel().getServer().overworld();
+                                                                overworld.modifyAttached(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD, leaderboard ->
+                                                                {
+                                                                    UUID uuid = nameAndId.id();
+                                                                    leaderboard.pardonPlayer(uuid);
+
+                                                                    sourceStack.sendSystemMessage(Component.literal(ChatFormatting.GREEN + "Pardoned Ender Dragon data for player '" + nameAndId.name() + "'"));
+                                                                    return leaderboard;
+                                                                });
+                                                            }
+
+                                                            return Command.SINGLE_SUCCESS;
+                                                        })
+                                        )
+                        )
                         .executes(context ->
                         {
                             CommandSourceStack sourceStack = context.getSource();
@@ -169,7 +241,7 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                 player.sendSystemMessage(Component.literal(ChatFormatting.AQUA + "/" + NAME + " leaderboard <slayed | lifetime_damage>"));
                                 if (player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                                 {
-                                    player.sendSystemMessage(Component.literal(ChatFormatting.RED + "/" + NAME + "wipe <username>"));
+                                    player.sendSystemMessage(Component.literal(ChatFormatting.DARK_PURPLE + "/" + NAME + " <wipe | ban | pardon> <username>"));
                                 }
                             }
                             return Command.SINGLE_SUCCESS;

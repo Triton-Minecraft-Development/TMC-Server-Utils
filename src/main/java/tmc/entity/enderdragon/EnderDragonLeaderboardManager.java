@@ -109,6 +109,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Float>> fullList = leaderboard.playerLifetimeDamages().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);
@@ -166,6 +167,7 @@ public class EnderDragonLeaderboardManager {
         sourceStack.sendSystemMessage(Component.empty());
         List<Map.Entry<UUID, Float>> topN = leaderboard.playerLifetimeDamages().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .limit(TOP_N)
                 .toList();
 
@@ -194,6 +196,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Integer>> fullList = leaderboard.dragonsSlayed().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);
@@ -252,6 +255,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Integer>> topN = leaderboard.dragonsSlayed().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .limit(TOP_N)
                 .toList();
 
@@ -278,10 +282,12 @@ public class EnderDragonLeaderboardManager {
     public static void printFightLeaderboard(EnderDragon dragon, ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();
-        AttackerHistoryData leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
 
+        AttackerHistoryData leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
+        EnderDragonLeaderboard enderDragonLeaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
         List<Map.Entry<UUID, Float>> fullList = leaderboard.attackerUuids().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !enderDragonLeaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);

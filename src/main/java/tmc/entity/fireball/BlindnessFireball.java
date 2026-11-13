@@ -3,8 +3,10 @@ package tmc.entity.fireball;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.item.ItemStack;
@@ -12,6 +14,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import tmc.damagetypes.TMCDamageTypes;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.enderdragon.TMCEnderDragonRenderer;
 import tmc.util.ItemUtils;
 
@@ -23,9 +27,7 @@ public class BlindnessFireball extends AbstractAreaEffectCloudFireball {
 
     public static BlindnessFireball launch(ServerLevel serverLevel, EnderDragon shooter, Vec3 dir)
     {
-        Vec3 look = shooter.getViewVector(1.0f);
         Vec3 spawn = TMCEnderDragonRenderer.getWarningHeadPos(shooter, 0);
-//        Vec3 spawn = new Vec3(shooter.head.getX() - look.x, shooter.head.getY(0.5) + 0.5, shooter.head.getZ() - look.z);
 
         BlindnessFireball fb = new BlindnessFireball(serverLevel, shooter, dir.normalize());
         fb.snapTo(spawn, 0.0f, 0.0f);
@@ -61,6 +63,12 @@ public class BlindnessFireball extends AbstractAreaEffectCloudFireball {
     }
 
     @Override
+    protected float impactDamageRadius()
+    {
+        return this.initialRadius() * 2f;
+    }
+
+    @Override
     protected int durationTicks()
     {
         return 750;
@@ -70,6 +78,26 @@ public class BlindnessFireball extends AbstractAreaEffectCloudFireball {
     protected @Nullable ParticleOptions getTrailParticle()
     {
         return ParticleTypes.LARGE_SMOKE;
+    }
+
+    @Override
+    protected DamageSource impactDamageSource(ServerLevel serverLevel, LivingEntity hitEntity, Entity owner)
+    {
+        if (owner instanceof LivingEntity livingOwner)
+        {
+            return TMCDamageTypes.getDamageSource(TMCDamageTypes.ENDER_DRAGON_MAGIC, serverLevel, hitEntity, livingOwner);
+        }
+        return null;
+    }
+
+    @Override
+    protected float impactDamage(Entity owner)
+    {
+        if (owner instanceof EnderDragon enderDragon)
+        {
+            return 2.5f * TMCEnderDragonManager.getMagicScalar(enderDragon);
+        }
+        return 2.5f;
     }
 
     @Override

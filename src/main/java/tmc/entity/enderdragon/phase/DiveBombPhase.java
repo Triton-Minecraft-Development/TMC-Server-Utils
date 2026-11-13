@@ -87,6 +87,16 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
 
     private static final int COOLDOWN_TICKS = 260;
 
+    private static int getCooldownTicks(EnderDragon dragon)
+    {
+        int cooldown = COOLDOWN_TICKS;
+        if (dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA).isUsed())
+        {
+            return (int) (cooldown * TMCEnderDragonManager.COOLDOWN_REDUCTION_BELOW_HALF);
+        }
+        return cooldown;
+    }
+
     public DiveBombPhase(EnderDragon dragon)
     {
         super(dragon);
@@ -255,7 +265,7 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
         {
             this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
             Integer stage2Ticks = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
-            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA, data -> data.setCooldown(stage2Ticks + COOLDOWN_TICKS));
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIVE_BOMB_DATA, data -> data.setCooldown(stage2Ticks + getCooldownTicks(this.dragon)));
         }
     }
 
@@ -276,7 +286,7 @@ public final class DiveBombPhase extends AbstractDragonPhaseInstance {
             double d = serverPlayer.position().distanceTo(targetPos);
             double falloff = 1.0 - d / IMPACT_RADIUS;
 
-            serverPlayer.hurtServer(level, level.damageSources().explosion(this.dragon, this.dragon), (float) (IMPACT_DAMAGE * falloff));
+            serverPlayer.hurtServer(level, level.damageSources().explosion(this.dragon, this.dragon), (float) (IMPACT_DAMAGE * falloff * TMCEnderDragonManager.getMeleeScalar(this.dragon)));
 
             Vec3 away = new Vec3(serverPlayer.getX() - targetPos.x, 0, serverPlayer.getZ() - targetPos.z);
             if (away.lengthSqr() <= 1.0E-4)

@@ -12,6 +12,8 @@ import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
@@ -39,7 +41,16 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
     {
         dispatcher.register(
                 Commands.literal(NAME)
-                        .requires(CommandSourceStack::isPlayer)
+                        .requires(commandSourceStack ->
+                        {
+                            ServerLevel level = commandSourceStack.getLevel();
+                            if (commandSourceStack.isPlayer() && commandSourceStack.getEntity() instanceof ServerPlayer player)
+                            {
+                                ServerLevel overworld = level.getServer().overworld();
+                                return overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD).getPlayerStats(player).slays() >= 1;
+                            }
+                            return false;
+                        })
                         .then(
                                 LiteralArgumentBuilder.<CommandSourceStack>literal("slayed")
                                         .executes(context ->
@@ -148,6 +159,21 @@ public class EnderDragonStatsCommand implements CommandRegistrationCallback {
                                                         })
                                         )
                         )
+                        .executes(context ->
+                        {
+                            CommandSourceStack sourceStack = context.getSource();
+                            if (sourceStack.isPlayer() && sourceStack.getEntity() instanceof ServerPlayer player)
+                            {
+                                player.sendSystemMessage(Component.literal(ChatFormatting.LIGHT_PURPLE + "Usage:"));
+                                player.sendSystemMessage(Component.literal(ChatFormatting.AQUA + "/" + NAME + " <slayed | lifetime_damage | best_damage>"));
+                                player.sendSystemMessage(Component.literal(ChatFormatting.AQUA + "/" + NAME + " leaderboard <slayed | lifetime_damage>"));
+                                if (player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                                {
+                                    player.sendSystemMessage(Component.literal(ChatFormatting.RED + "/" + NAME + "wipe <username>"));
+                                }
+                            }
+                            return Command.SINGLE_SUCCESS;
+                        })
         );
     }
 }

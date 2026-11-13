@@ -71,6 +71,16 @@ public class FireballBarragePhase extends AbstractDragonPhaseInstance {
 
     private static final int COOLDOWN_TICKS = 260;
 
+    private static int getCooldownTicks(EnderDragon dragon)
+    {
+        int cooldown = COOLDOWN_TICKS;
+        if (dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA).isUsed())
+        {
+            return (int) (cooldown * TMCEnderDragonManager.COOLDOWN_REDUCTION_BELOW_HALF);
+        }
+        return cooldown;
+    }
+
     private static List<Vec3> buildPattern(RandomSource randomSource)
     {
         List<Vec3> pattern = new ArrayList<>(FIREBALL_COUNT);
@@ -262,7 +272,7 @@ public class FireballBarragePhase extends AbstractDragonPhaseInstance {
         {
             this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
             Integer stage2Ticks = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
-            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA, fireballBarrageData -> fireballBarrageData.setCooldown(stage2Ticks + COOLDOWN_TICKS));
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA, fireballBarrageData -> fireballBarrageData.setCooldown(stage2Ticks + getCooldownTicks(this.dragon)));
         }
     }
 

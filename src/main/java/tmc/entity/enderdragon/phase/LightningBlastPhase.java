@@ -50,7 +50,6 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final double MARKER_STACK = 0.002;
     private static final float MARKER_VIEW_RANGE = 4.0F;
 
-
     private static final double PERCH_HEIGHT = 40.0;
     private static final double PERCH_TOLERANCE = 6.0;
     private static final double APPROACH_SPEED = 1.3;
@@ -66,15 +65,13 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final int SPARK_INTERVAL = 4;
     public static final int COOLDOWN_TICKS = 600;
 
-    // ---- Zones ----
     private static final int ZONE_SIZE = 5;
     private static final int ZONE_GAP = 1;
     public static final double TARGET_RANGE = 200;
     private static final int FILLER_PER_PLAYER = 10;
     private static final int FILLER_SPREAD = 12;
     private static final int FILLER_ATTEMPTS = 12;
-    private static final int MAX_ZONES = 96;
-    private static final double MAX_GROUND_DIFF = 10.0;
+    private static final int MAX_ZONES = 160;
 
     /// Starts this far above the player, so raised ground still counts
     private static final int FLOOR_SEARCH_UP = 4;
@@ -88,6 +85,16 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
     private static final float LIGHTNING_DAMAGE_MAX_HEALTH = 0.5F;
     private static final double SHARED_BOLT_RANGE = 2.0;
     private static final int IMPACT_SOUND_LIMIT = 6;
+
+    private static int getCooldownTicks(EnderDragon dragon)
+    {
+        int cooldown = COOLDOWN_TICKS;
+        if (dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA).isUsed())
+        {
+            return (int) (cooldown * TMCEnderDragonManager.COOLDOWN_REDUCTION_BELOW_HALF);
+        }
+        return cooldown;
+    }
 
     @Nullable
     private static LightningBolt nearestBolt(List<LightningBolt> bolts, Vec3 pos)
@@ -122,14 +129,6 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         }
         return false;
     }
-
-//    /** Top of the ground at the zone's centre, or the player's own height over the void / pillars / roofs. */
-//    private static int groundY(ServerLevel level, int x, int z, double referenceY)
-//    {
-//        int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-//        if (ground <= level.getMinY() || Math.abs(ground - referenceY) > MAX_GROUND_DIFF) return Mth.floor(referenceY);
-//        return ground;
-//    }
 
     private static Vec3 zonesCentroid(List<Vec3> zones)
     {
@@ -415,7 +414,7 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
         {
             this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
             Integer stage2Ticks = this.dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_STAGE_2_TIMER);
-            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA, lightningBlastData -> lightningBlastData.setCooldown(stage2Ticks + COOLDOWN_TICKS).resetTotalTicks());
+            this.dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA, lightningBlastData -> lightningBlastData.setCooldown(stage2Ticks + getCooldownTicks(this.dragon)).resetTotalTicks());
         }
     }
 

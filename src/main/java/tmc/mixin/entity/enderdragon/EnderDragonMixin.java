@@ -40,6 +40,8 @@ import tmc.entity.enderdragon.TMCEnderDragonManager;
  * @see TMCDataAttachments#ENDER_DRAGON_LIGHTNING_BLAST_DATA
  * @see TMCDataAttachments#ENDER_DRAGON_SKY_ANSWERS_DATA
  * @see TMCDataAttachments#LOGGED_ATTACKERS
+ * @see TMCDataAttachments#INVOLVED_PLAYERS_DATA
+ * @see TMCDataAttachments#PLAYER_KILLS
  */
 @Mixin(EnderDragon.class)
 public abstract class EnderDragonMixin {
@@ -69,6 +71,8 @@ public abstract class EnderDragonMixin {
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.INVOLVED_PLAYERS_DATA);
+        dragon.getAttachedOrCreate(TMCDataAttachments.PLAYER_KILLS);
     }
 
     /**

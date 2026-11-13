@@ -5,10 +5,14 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tmc.attachments.TMCDataAttachments;
@@ -19,8 +23,12 @@ import tmc.entity.enderdragon.EnderDragonEventHandler;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.enderdragon.WarningManager;
 
-import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class TMCServerUtils implements ModInitializer
 {
@@ -52,6 +60,23 @@ public class TMCServerUtils implements ModInitializer
                 .get(uuid)
                 .map(NameAndId::name)
                 .orElse("Unknown Player");
+    }
+
+    public static List<Entity> getEntitiesInRadius(Entity center, double radius)
+    {
+        return getEntitiesInRadius(center, Entity.class, radius);
+    }
+
+    public static <T extends Entity> List<T> getEntitiesInRadius(Entity center, Class<T> type, double radius)
+    {
+        AABB searchArea = center.getBoundingBox().inflate(radius);
+        return center.level().getEntitiesOfClass(type, searchArea, isWithinRadius(center, radius));
+    }
+
+    private static Predicate<Entity> isWithinRadius(Entity center, double radius)
+    {
+        double radiusSqr = radius * radius;
+        return target -> target != center && target.distanceToSqr(center) <= radiusSqr;
     }
 
     @Override

@@ -4,10 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import tmc.commands.impl.BroadcastCommand;
-import tmc.commands.impl.DateTimeCommand;
-import tmc.commands.impl.EnderDragonStatsCommand;
-import tmc.commands.impl.GameRuleCommand;
+import tmc.commands.impl.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +20,7 @@ public class CommandManager
         cmds.add(new GameRuleCommand());
 
         new EnderDragonStatsCommand();
+        new ViewEnderDragonKillsCommand();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, _, _) ->
         {

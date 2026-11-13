@@ -1,6 +1,7 @@
 package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -11,11 +12,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.*;
@@ -26,13 +29,14 @@ import tmc.util.PlayerClusterScanner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * Event handlers for Ender Dragon
  */
 public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
         TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
-        TMCEnderDragonEvents.PhaseTick, ServerLivingEntityEvents.AfterDeath {
+        TMCEnderDragonEvents.PhaseTick, ServerLivingEntityEvents.AfterDeath, ServerPlayerEvents.Leave {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -180,6 +184,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         {
             return;
         }
+        for (ServerPlayer serverPlayer : serverLevel.getServer().getPlayerList().getPlayers())
+        {
+            enderDragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.removePlayerOnTick(serverPlayer, ticks));
+        }
         SkyAnswersData skyAnswersData = enderDragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
         EnderDragonPhase<?> current = enderDragon.getPhaseManager().getCurrentPhase().getPhase();
         if (!skyAnswersData.isUsed() && enderDragon.getHealth() <= enderDragon.getMaxHealth() * 0.5f && current != EnderDragonPhase.DYING)
@@ -219,6 +227,66 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         }
     }
 
+    @Override
+    public void afterDeath(LivingEntity entity, DamageSource damageSource)
+    {
+        if (damageSource.getEntity() == null)
+        {
+            return;
+        }
+        if (damageSource.getEntity() instanceof EnderDragon dragon)
+        {
+            if (!(entity instanceof ServerPlayer serverPlayer))
+            {
+                return;
+            }
+            dragon.modifyAttached(TMCDataAttachments.PLAYER_KILLS, integer -> integer + 1);
+            if (TMCEnderDragonManager.getDragonStage(dragon) != EnderDragonStage.STAGE_2)
+            {
+                return;
+            }
+            int ticks = TMCEnderDragonManager.getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
+            DialogueCooldownData dialogueCooldownData = dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
+            if (!dialogueCooldownData.isKillPlayerReady(ticks))
+            {
+                return;
+            }
+            Random random = new Random();
+            int choice = random.nextInt(TMCEnderDragonManager.DIALOGUE_KILL_PLAYER.length);
+            String dialogue = TMCEnderDragonManager.DIALOGUE_KILL_PLAYER[choice];
+            TMCServerUtils.messageAllPlayers(serverPlayer.level(), player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
+                    TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
+
+            dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setKillPlayerCooldown(ticks + DialogueCooldownData.KILL_PLAYER_COOLDOWN_TICKS));
+        }
+    }
+
+    @Override
+    public void onLeave(ServerPlayer player)
+    {
+        ServerLevel endLevel = player.level().getServer().getLevel(ServerLevel.END);
+        if (endLevel == null)
+        {
+            return;
+        }
+        EnderDragonFight fight = endLevel.getDragonFight();
+        if (fight == null)
+        {
+            return;
+        }
+        UUID dragonUUID = fight.dragonUUID();
+        if (dragonUUID == null)
+        {
+            return;
+        }
+        Entity dragonEntity = endLevel.getEntity(dragonUUID);
+        if (!(dragonEntity instanceof EnderDragon dragon))
+        {
+            return;
+        }
+        dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.removePlayer(player));
+    }
+
     private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage, boolean lightningBlast)
     {
         List<EnderDragonPhase<?>> attacks = new ArrayList<>(3);
@@ -242,32 +310,4 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         return phase.equals(TMCEnderDragonManager.Phases.DIVE_BOMB_PHASE) || phase.equals(TMCEnderDragonManager.Phases.FIREBALL_BARRAGE_PHASE);
     }
 
-    @Override
-    public void afterDeath(LivingEntity entity, DamageSource damageSource)
-    {
-        if (damageSource.getEntity() == null)
-        {
-            return;
-        }
-        if (damageSource.getEntity() instanceof EnderDragon dragon)
-        {
-            if (!(entity instanceof ServerPlayer serverPlayer))
-            {
-                return;
-            }
-            int ticks = TMCEnderDragonManager.getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
-            DialogueCooldownData dialogueCooldownData = dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
-            if (!dialogueCooldownData.isKillPlayerReady(ticks))
-            {
-                return;
-            }
-            Random random = new Random();
-            int choice = random.nextInt(TMCEnderDragonManager.DIALOGUE_KILL_PLAYER.length);
-            String dialogue = TMCEnderDragonManager.DIALOGUE_KILL_PLAYER[choice];
-            TMCServerUtils.messageAllPlayers(serverPlayer.level(), player -> TMCServerUtils.isPlayerInDimension(player, ServerLevel.END),
-                    TMCEnderDragonManager.createEnderDragonDialogueComponent(dialogue));
-
-            dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setKillPlayerCooldown(ticks + DialogueCooldownData.KILL_PLAYER_COOLDOWN_TICKS));
-        }
-    }
 }

@@ -109,6 +109,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Float>> fullList = leaderboard.playerLifetimeDamages().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);
@@ -166,6 +167,7 @@ public class EnderDragonLeaderboardManager {
         sourceStack.sendSystemMessage(Component.empty());
         List<Map.Entry<UUID, Float>> topN = leaderboard.playerLifetimeDamages().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .limit(TOP_N)
                 .toList();
 
@@ -194,6 +196,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Integer>> fullList = leaderboard.dragonsSlayed().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);
@@ -252,6 +255,7 @@ public class EnderDragonLeaderboardManager {
 
         List<Map.Entry<UUID, Integer>> topN = leaderboard.dragonsSlayed().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !leaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .limit(TOP_N)
                 .toList();
 

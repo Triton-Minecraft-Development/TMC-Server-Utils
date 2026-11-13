@@ -21,6 +21,7 @@ public class CommandManager
 
         new EnderDragonStatsCommand();
         new ViewEnderDragonKillsCommand();
+        new EnderDragonGagCommand();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, _, _) ->
         {

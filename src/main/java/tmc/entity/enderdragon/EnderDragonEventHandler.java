@@ -161,7 +161,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     EnderDragonLeaderboard.update(serverLevel, player, damage);
                     EnderDragonLeaderboardManager.printFightLeaderboard(dragon, serverLevel, player);
                     EnderDragonLeaderboard leaderboard = serverLevel.getServer().overworld().getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
-
+                    if (leaderboard.isPlayerBanned(player.getUUID()))
+                    {
+                        return;
+                    }
                     EnderDragonLeaderboard.PlayerStats stats = leaderboard.getPlayerStats(player);
                     int newKills = stats.slays();
                     if (newKills == 1)

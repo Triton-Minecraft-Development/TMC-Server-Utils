@@ -21,18 +21,18 @@ import java.util.function.Predicate;
 
 public class WarningManager {
 
-    private static final int FADE_IN = 5;
-    private static final int FADE_OUT = 5;
+    public static final int WARNING_INTERVAL = 10;
     private static final int STAGE_2_DURATION = 100;
     private static final int LIGHTNING_BLAST_DURATION = LightningBlastPhase.WINDUP_TICKS + LightningBlastPhase.CHARGE_TICKS + LightningBlastPhase.LINGER_TICKS;
-    private static final int SKY_ANSWERS_DURATION = 100;
     private static final Component TITLE_WARNING = Component.literal("DANGER").withStyle(ChatFormatting.BOLD, ChatFormatting.RED);
     private static final Component STAGE_2_SUBTITLE_WARNING_1 = createSubtitleWarning("STEP AWAY NOW", true);
     private static final Component STAGE_2_SUBTITLE_WARNING_2 = createSubtitleWarning("STEP AWAY NOW", false);
+    private static final Component STAGE_2_CHAT_WARNING = Component.literal("You are too close to the Ender Dragon. RUN!").withStyle(ChatFormatting.BOLD, ChatFormatting.RED);
     private static final Component LIGHTNING_BLAST_SUBTITLE_WARNING_1 = createSubtitleWarning("WATCH YOUR FOOTING", true);
     private static final Component LIGHTNING_BLAST_SUBTITLE_WARNING_2 = createSubtitleWarning("WATCH YOUR FOOTING", false);
+    private static final Component LIGHTNING_BLAST_CHAT_WARNING = Component.literal("Watch your footing, and stay outside the portals!").withStyle(ChatFormatting.BOLD, ChatFormatting.RED);
 
-    private static Component createSubtitleWarning(String message, boolean flashed)
+    public static Component createSubtitleWarning(String message, boolean flashed)
     {
         ChatFormatting warningColor = flashed ? ChatFormatting.WHITE : ChatFormatting.YELLOW;
         return Component.literal(warningColor + "⚠ " + ChatFormatting.RED + message + warningColor + " ⚠");
@@ -40,67 +40,31 @@ public class WarningManager {
 
     public static void warnPlayerStage2Opening(ServerPlayer player, int tick, double distance)
     {
-        if (!AlarmSound.isPlaying(player))
+        onWarningTick(tick, STAGE_2_DURATION, TITLE_WARNING, STAGE_2_SUBTITLE_WARNING_1, STAGE_2_SUBTITLE_WARNING_2, STAGE_2_CHAT_WARNING, player, p -> distance <= 50);
+    }
+
+    public static void warnPlayerLightningBlast(ServerPlayer player, int tick, double distance)
+    {
+        onWarningTick(tick, LIGHTNING_BLAST_DURATION, TITLE_WARNING, LIGHTNING_BLAST_SUBTITLE_WARNING_1, LIGHTNING_BLAST_SUBTITLE_WARNING_2, LIGHTNING_BLAST_CHAT_WARNING, player, p -> distance <= LightningBlastPhase.TARGET_RANGE);
+    }
+
+    public static void onWarningAlarmOnlyTick(ServerPlayer player, boolean condition)
+    {
+        if (condition)
         {
-            AlarmSound.play(player, AlarmSound.ringLengthTicks());
-        }
-        if (distance > 50)
+            AlarmSound.playNoReplace(player, AlarmSound.ringLengthTicks());
+        } else
         {
             AlarmSound.stop(player);
-            return;
         }
-
-        sendWarningTitles(player, TITLE_WARNING, STAGE_2_DURATION);
-        sendFlashingWarningTitles(player, STAGE_2_SUBTITLE_WARNING_1, STAGE_2_SUBTITLE_WARNING_2, tick);
     }
 
-    public static void warnPlayerLightningBlast(ServerPlayer player, int tick)
+    private static void onWarningTick(int ticksElapsed, int duration, Component title, Component subtitle1, Component subtitle2, Component chatMessage, ServerPlayer player, Predicate<ServerPlayer> condition)
     {
-        if (!AlarmSound.isPlaying(player))
-        {
-            AlarmSound.play(player, AlarmSound.ringLengthTicks());
-        }
-
-        if (tick == 0)
-        {
-            sendWarningTitles(player, TITLE_WARNING, LIGHTNING_BLAST_DURATION);
-        }
-        sendFlashingWarningTitles(player, LIGHTNING_BLAST_SUBTITLE_WARNING_1, LIGHTNING_BLAST_SUBTITLE_WARNING_2, tick);
-    }
-
-    public static void warnPlayerSkyAnswers(ServerPlayer player, int tick)
-    {
-        if (!AlarmSound.isPlaying(player))
-        {
-            AlarmSound.play(player, AlarmSound.ringLengthTicks());
-        }
-
-    }
-
-    private static void sendWarningTitles(ServerPlayer player, Component title, int duration)
-    {
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(FADE_IN, duration, FADE_OUT));
-        player.connection.send(new ClientboundSetTitleTextPacket(title));
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 10, 0));
-    }
-
-    private static void sendFlashingWarningTitles(ServerPlayer player, Component subtitle1, Component subtitle2, int tick)
-    {
-        int interval = tick % 20;
-        if (interval < 10)
-        {
-            player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle1));
-            return;
-        }
-        player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle2));
-    }
-
-    private static void onWarningTick(int ticksElapsed, int duration, Component title, Component subtitle1, Component subtitle2, ServerPlayer player, Predicate<ServerPlayer> condition)
-    {
-        boolean isFlashTick = ticksElapsed % 10 == 0;
+        boolean isFlashTick = ticksElapsed % WARNING_INTERVAL == 0;
         boolean isFinalTick = ticksElapsed >= duration;
 
-        Component currentSubtitle = ((ticksElapsed / 10) % 2 == 0) ? subtitle1 : subtitle2;
+        Component currentSubtitle = ((ticksElapsed / WARNING_INTERVAL) % 2 == 0) ? subtitle1 : subtitle2;
 
         boolean active = condition.test(player);
         boolean alreadyTracking = player.getAttachedOrCreate(TMCDataAttachments.PLAYER_WARNING_TITLES_DATA);
@@ -119,28 +83,32 @@ public class WarningManager {
             player.modifyAttached(TMCDataAttachments.PLAYER_WARNING_TITLES_DATA, _ -> true);
             int remainingStay = Math.max(0, duration - ticksElapsed);
 
-            player.connection.send(new ClientboundSetTitlesAnimationPacket(10, remainingStay, 10));
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(WARNING_INTERVAL, remainingStay, WARNING_INTERVAL));
             player.connection.send(new ClientboundSetTitleTextPacket(title));
             player.connection.send(new ClientboundSetSubtitleTextPacket(currentSubtitle));
-
+            player.sendSystemMessage(chatMessage);
             return;
         }
 
         // Final tick -> trigger 10-tick fade-out for meeting predicate
         if (alreadyTracking && isFinalTick)
         {
-            player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 0, 10));
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 0, WARNING_INTERVAL));
             player.connection.send(new ClientboundSetTitleTextPacket(title));
             player.connection.send(new ClientboundSetSubtitleTextPacket(currentSubtitle));
             return;
         }
 
         // Player is already watching -> only send packets on flash interval
-        if (alreadyTracking && isFlashTick && ticksElapsed >= 10)
+        if (alreadyTracking && isFlashTick && ticksElapsed >= WARNING_INTERVAL)
         {
+            if (ticksElapsed == WARNING_INTERVAL)
+            {
+                player.sendSystemMessage(chatMessage);
+            }
             int remainingStay = Math.max(0, duration - ticksElapsed);
 
-            player.connection.send(new ClientboundSetTitlesAnimationPacket(0, remainingStay, 10));
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(0, remainingStay, WARNING_INTERVAL));
             player.connection.send(new ClientboundSetTitleTextPacket(title));
             player.connection.send(new ClientboundSetSubtitleTextPacket(currentSubtitle));
         }

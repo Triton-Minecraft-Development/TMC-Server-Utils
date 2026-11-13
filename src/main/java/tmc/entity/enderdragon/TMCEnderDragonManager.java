@@ -2,6 +2,8 @@ package tmc.entity.enderdragon;
 
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -12,12 +14,16 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.AttackerHistory;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
 import tmc.event.TMCEnderDragonEvents;
+import tmc.mixin.entity.enderdragon.EnderDragonFightAccessor;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -267,6 +273,41 @@ public class TMCEnderDragonManager {
         }
         Integer ticks = dragon.getAttached(attachment);
         return ticks != null ? ticks : 0;
+    }
+
+    /**
+     * Gets the location the Ender Dragon should perch at, which is directly on top of the
+     * End exit portal's bedrock pillar, ignoring any blocks placed above it
+     * @param dragon The Ender Dragon that will perch
+     * @param heightmapPos The vanilla perch location (the highest block above the exit portal)
+     * @return The location on top of the exit portal's bedrock pillar, or the given heightmap
+     * location if the exit portal could not be found
+     */
+    public static BlockPos getPortalPerchLocation(EnderDragon dragon, BlockPos heightmapPos)
+    {
+        EnderDragonFight fight = dragon.getDragonFight();
+        if (fight != null)
+        {
+            // The exit portal location is the center of the portal. The bedrock pillar is 4 blocks tall above it
+            BlockPos exitPortal = ((EnderDragonFightAccessor) fight).tmc$getExitPortalLocation();
+            if (exitPortal != null)
+            {
+                return heightmapPos.atY(exitPortal.getY() + 4);
+            }
+        }
+
+        // Fall back to the highest bedrock block in the column (e.g. dragons not tied to the fight)
+        Level level = dragon.level();
+        BlockPos.MutableBlockPos pos = heightmapPos.mutable();
+        while (pos.getY() > level.getMinY())
+        {
+            pos.move(Direction.DOWN);
+            if (level.getBlockState(pos).is(Blocks.BEDROCK))
+            {
+                return pos.above();
+            }
+        }
+        return heightmapPos;
     }
 
     public static void blastPlayer(ServerPlayer player, EnderDragon dragon)

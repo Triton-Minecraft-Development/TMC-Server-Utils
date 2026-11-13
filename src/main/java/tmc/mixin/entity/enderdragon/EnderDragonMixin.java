@@ -1,6 +1,8 @@
 package tmc.mixin.entity.enderdragon;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -67,6 +69,17 @@ public abstract class EnderDragonMixin {
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_FIREBALL_BARRAGE_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_LIGHTNING_BLAST_DATA);
         dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_SKY_ANSWERS_DATA);
+    }
+
+    /**
+     * Keeps the dragon's head angle during landing and takeoff aimed at the End exit portal
+     * @see tmc.mixin.entity.enderdragon.DragonPerchLocationMixin
+     */
+    @ModifyExpressionValue(method = "getHeadLookVector",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;"))
+    private BlockPos headLookAtExitPortal(BlockPos original)
+    {
+        return TMCEnderDragonManager.getPortalPerchLocation((EnderDragon) (Object) this, original);
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",

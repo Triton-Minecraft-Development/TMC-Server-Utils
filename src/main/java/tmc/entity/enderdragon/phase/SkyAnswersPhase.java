@@ -30,6 +30,7 @@ import tmc.codec.enderdragon.SkyAnswersData;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.DialogueSequence;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
+import tmc.entity.enderdragon.WarningManager;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.ArrayList;
@@ -46,6 +47,11 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
     private static final int END_TICK = 120;
     private static final int TITLE_FADE_OUT = 10;
     private static final ChatFormatting[] TITLE_STYLE = { ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD };
+
+    private static final int WARNING_START_TICK = 0;
+    private static final int WARNING_FLASH_INTERVAL = 10;
+    private static final Component WARNING_LABEL_1 = WarningManager.createSubtitleWarning("TAKE COVER!", true);
+    private static final Component WARNING_LABEL_2 = WarningManager.createSubtitleWarning("TAKE COVER!", false);
 
     private static final double RANGE = 200.0;
     private static final int COVER_HEIGHT = 20;
@@ -97,9 +103,18 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
         if (bolt == null) return null;
         bolt.snapTo(pos.x, pos.y, pos.z, 0.0F, 0.0F);
         bolt.setVisualOnly(true);         // no 3-block area damage (would reach sheltered players), no ground fire
-//        bolt.setDamage(LIGHTNING_DAMAGE); // read by thunderHit
         level.addFreshEntity(bolt);
         return bolt;
+    }
+
+    private static Component subtitleAt(int t)
+    {
+        if (t < WARNING_START_TICK || t >= STRIKE_TICK)
+        {
+            return Component.empty();
+        }
+        boolean flash = ((t - WARNING_START_TICK) / WARNING_FLASH_INTERVAL) % 2 == 0;
+        return flash ? WARNING_LABEL_1 : WARNING_LABEL_2;
     }
 
     private int shownWord = -1; // not saved: after a reload the current word is simply shown again
@@ -130,6 +145,7 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
             for (ServerPlayer player : playersInRange(level))
             {
                 player.connection.send(new ClientboundClearTitlesPacket(true));
+                WarningManager.AlarmSound.stop(player);
             }
         }
         data.setActive(false);
@@ -138,9 +154,9 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
     @Override
     public void doServerTick(ServerLevel level)
     {
-        SkyAnswersData data = getData();
+        SkyAnswersData data = this.getData();
         int t = data.getTicks();
-        hover(data);
+        this.hover(data);
 
         // "THE" - she stops and spreads her wings
         if (t == 0)
@@ -151,6 +167,10 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
         }
         TMCEnderDragonEvents.ON_DIALOGUE_TICK.invoker().onDialogueTick(level, this.dragon, DialogueSequence.SKY_ANSWERS, t);
 
+        for (ServerPlayer player : level.getPlayers(p -> p.distanceTo(this.dragon) <= RANGE))
+        {
+            WarningManager.onWarningAlarmOnlyTick(player, player.distanceTo(this.dragon) <= RANGE);
+        }
         // "SKY" - thunder rumbles (volume 10000 carries across the whole End, like vanilla thunder)
         if (t == RUMBLE_TICK)
         {
@@ -219,11 +239,22 @@ public class SkyAnswersPhase extends AbstractDragonPhaseInstance {
         int stay = Math.max(1, nextTick - t);
 
         Component text = Component.literal(WORDS[word]).withStyle(TITLE_STYLE);
+        Component subtitle = subtitleAt(t);
+
         for (ServerPlayer player : playersInRange(level))
         {
             player.connection.send(new ClientboundSetTitlesAnimationPacket(0, stay, last ? TITLE_FADE_OUT : 0));
-            player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty())); // clear leftovers from other dialogue
+            player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle)); // clear leftovers from other dialogue
             player.connection.send(new ClientboundSetTitleTextPacket(text));
+        }
+    }
+
+    private void sendSubtitle(ServerLevel level, Component subtitle)
+    {
+        ClientboundSetSubtitleTextPacket packet = new ClientboundSetSubtitleTextPacket(subtitle);
+        for (ServerPlayer player : this.playersInRange(level))
+        {
+            player.connection.send(packet);
         }
     }
 

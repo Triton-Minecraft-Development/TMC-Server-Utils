@@ -241,6 +241,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                 return;
             }
             dragon.modifyAttached(TMCDataAttachments.PLAYER_KILLS, integer -> integer + 1);
+            if (TMCEnderDragonManager.getDragonStage(dragon) != EnderDragonStage.STAGE_2)
+            {
+                return;
+            }
             int ticks = TMCEnderDragonManager.getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
             DialogueCooldownData dialogueCooldownData = dragon.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA);
             if (!dialogueCooldownData.isKillPlayerReady(ticks))

@@ -24,7 +24,7 @@ public class ViewEnderDragonKillsCommand implements CommandRegistrationCallback 
     private static final String NAME = "ender_dragon_kills";
 
     private static final Component NOT_AVAILABLE = Component.literal(ChatFormatting.RED + "This command is not available when no Ender Dragon fight is active!");
-    private static Component getChatComponent(int kills)
+    public static Component getChatComponent(int kills)
     {
         return Component.literal(ChatFormatting.LIGHT_PURPLE + "The Ender Dragon has " + ChatFormatting.GOLD + kills + ChatFormatting.LIGHT_PURPLE + " kills");
     }

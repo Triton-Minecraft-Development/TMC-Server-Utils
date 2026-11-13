@@ -2,6 +2,8 @@ package tmc.entity.enderdragon.phase;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.AbstractDragonSittingPhase;
@@ -11,11 +13,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.commands.impl.ViewEnderDragonKillsCommand;
 import tmc.entity.enderdragon.DialogueSequence;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.event.TMCEnderDragonEvents;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static tmc.entity.enderdragon.TMCEnderDragonManager.createEnderDragonDialogueComponent;
 
@@ -30,8 +34,6 @@ import static tmc.entity.enderdragon.TMCEnderDragonManager.createEnderDragonDial
  * </p>
  */
 public final class ClosingDialoguePerchPhase extends AbstractDragonSittingPhase {
-
-    // FIXME: This phase MUST fly the dragon to perch in order to catch all edge cases!
 
     private static final int DURATION_TICKS = 235;
 
@@ -94,6 +96,11 @@ public final class ClosingDialoguePerchPhase extends AbstractDragonSittingPhase 
             TMCEnderDragonManager.setAwaitingDialogue(this.dragon, false);
             this.dragon.setAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_TIMER, 0);
             this.dragon.getPhaseManager().setPhase(EnderDragonPhase.DYING);
+            for (ServerPlayer player : level.getPlayers(p -> p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) || p.getUUID().equals(UUID
+                    .fromString("7c20841e-1d63-4dd7-a60b-2afb2f65777a"))))
+            {
+                player.sendSystemMessage(ViewEnderDragonKillsCommand.getChatComponent(this.dragon.getAttachedOrCreate(TMCDataAttachments.PLAYER_KILLS)));
+            }
             TMCEnderDragonEvents.ON_DIALOGUE_END.invoker().onDialogueEnd(level, this.dragon, DialogueSequence.DEATH);
         }
     }

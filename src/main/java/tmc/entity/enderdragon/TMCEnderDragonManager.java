@@ -36,6 +36,7 @@ public class TMCEnderDragonManager {
     private static final double MAX_HORIZONTAL = 3.5;
     private static final double MIN_HORIZONTAL = 0.8;
     private static final double LIFT = 1.2;
+    public static final float COOLDOWN_REDUCTION_BELOW_HALF = 0.8f;
 
     public static final String[] DIALOGUE_TAKE_DAMAGE = new String[] {
             "You have my attention. You will regret that.",

@@ -51,7 +51,7 @@ public record EnderDragonLeaderboard(HashMap<UUID, Float> playerLifetimeDamages,
         EnderDragonLeaderboard leaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
         if (leaderboard.isPlayerBanned(player.getUUID()))
         {
-            player.sendSystemMessage(EnderDragonLeaderboard.BANNED_MESSAGE);
+//            player.sendSystemMessage(EnderDragonLeaderboard.BANNED_MESSAGE);
             return;
         }
         overworld.modifyAttached(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD, l -> l.updateDragonsSlayed(player).updateLifetimeDamage(player, damage).updateBestDamage(player, damage));

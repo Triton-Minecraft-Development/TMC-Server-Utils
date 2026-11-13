@@ -282,10 +282,12 @@ public class EnderDragonLeaderboardManager {
     public static void printFightLeaderboard(EnderDragon dragon, ServerLevel serverLevel, ServerPlayer serverPlayer)
     {
         ServerLevel overworld = serverLevel.getServer().overworld();
-        AttackerHistoryData leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
 
+        AttackerHistoryData leaderboard = dragon.getAttachedOrCreate(TMCDataAttachments.LOGGED_ATTACKERS);
+        EnderDragonLeaderboard enderDragonLeaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
         List<Map.Entry<UUID, Float>> fullList = leaderboard.attackerUuids().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .filter(uuidIntegerEntry -> !enderDragonLeaderboard.isPlayerBanned(uuidIntegerEntry.getKey()))
                 .toList();
 
         serverPlayer.sendSystemMessage(DIVIDER);

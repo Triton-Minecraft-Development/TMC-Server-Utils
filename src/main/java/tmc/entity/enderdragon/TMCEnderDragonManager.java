@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.InvolvedPlayersData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
@@ -27,6 +28,7 @@ import tmc.event.TMCEnderDragonEvents;
 import tmc.mixin.entity.enderdragon.EnderDragonFightAccessor;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 
 public class TMCEnderDragonManager {
@@ -98,6 +100,13 @@ public class TMCEnderDragonManager {
         }
         int ticks = getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
         dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
+
+        Optional<ServerLevel> endOptional = TMCServerUtils.getEndServerLevel(level);
+        if (endOptional.isEmpty())
+        {
+            return;
+        }
+        endOptional.get().modifyAttached(TMCDataAttachments.ENDER_DRAGON_KEEP_INVENTORY, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
     }
 
     public static HashMap<UUID, Float> getAllAttackers(EnderDragon dragon)

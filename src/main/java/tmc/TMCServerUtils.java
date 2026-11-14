@@ -79,6 +79,11 @@ public class TMCServerUtils implements ModInitializer
         return target -> target != center && target.distanceToSqr(center) <= radiusSqr;
     }
 
+    public static Optional<ServerLevel> getEndServerLevel(ServerLevel serverLevel)
+    {
+        return Optional.ofNullable(serverLevel.getServer().getLevel(ServerLevel.END));
+    }
+
     @Override
     public void onInitialize()
     {

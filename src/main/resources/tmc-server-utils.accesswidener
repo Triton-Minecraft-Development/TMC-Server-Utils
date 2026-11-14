@@ -4,3 +4,4 @@ accessible method net/minecraft/world/entity/boss/enderdragon/phases/EnderDragon
 accessible field net/minecraft/world/entity/Entity invulnerableTime I
 extendable method net/minecraft/world/entity/AreaEffectCloud serverTick (Lnet/minecraft/server/level/ServerLevel;)V
 extendable method net/minecraft/world/entity/projectile/hurtingprojectile/Fireball getDefaultItem ()Lnet/minecraft/world/item/ItemStack;
+accessible method net/minecraft/server/level/ServerPlayer transferInventoryXpAndScore (Lnet/minecraft/world/entity/player/Player;)V

@@ -176,5 +176,12 @@ public class TMCDataAttachments {
                     .persistent(Codec.INT)
     );
 
+    public static final AttachmentType<InvolvedPlayersData> ENDER_DRAGON_KEEP_INVENTORY = AttachmentRegistry.create(
+            TMCServerUtils.of("ender_dragon_fight_keep_inventory"),
+            builder -> builder
+                    .initializer(InvolvedPlayersData::new)
+                    .persistent(InvolvedPlayersData.CODEC)
+    );
+
     public static void initialize() {}
 }

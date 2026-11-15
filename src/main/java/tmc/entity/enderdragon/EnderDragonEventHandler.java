@@ -19,17 +19,17 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
+import tmc.GameRules;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.*;
 import tmc.commands.impl.EnderDragonStatsCommand;
+import tmc.config.Config;
+import tmc.config.ConfigManager;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.util.PlayerClusterScanner;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Event handlers for Ender Dragon
@@ -73,6 +73,11 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     public boolean allowDeath(LivingEntity entity, DamageSource damageSource, float damageAmount)
     {
         if (!(entity instanceof EnderDragon enderDragon) || !enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA))
+        {
+            return true;
+        }
+        EnumMap<GameRules, Boolean> rules = ConfigManager.get().gameRules;
+        if (rules.containsKey(GameRules.ENDER_DRAGON_STAGE_2) && !rules.get(GameRules.ENDER_DRAGON_STAGE_2))
         {
             return true;
         }

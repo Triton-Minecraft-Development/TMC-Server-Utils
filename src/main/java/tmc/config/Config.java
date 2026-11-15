@@ -16,5 +16,6 @@ public class Config
         gameRules.put(GameRules.DISABLE_EXPLOSION_DAMAGE, false);
         gameRules.put(GameRules.PVP_EXPLOSIONS_DONT_DELETE_DROPS, true);
         gameRules.put(GameRules.HOPPER_MINECARTS_RETAIN_DEFAULT_SPEED, true);
+        gameRules.put(GameRules.ENDER_DRAGON_STAGE_2, false);
     }
 }

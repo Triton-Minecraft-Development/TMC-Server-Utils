@@ -183,5 +183,12 @@ public class TMCDataAttachments {
                     .persistent(InvolvedPlayersData.CODEC)
     );
 
+    public static final AttachmentType<Integer> PORTAL_HIGHLIGHT_LIFESPAN = AttachmentRegistry.create(
+            TMCServerUtils.of("portal_highlight_attachment"),
+            integerBuilder -> integerBuilder
+                    .initializer(() -> 0)
+                    .persistent(Codec.INT)
+    );
+
     public static void initialize() {}
 }

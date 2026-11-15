@@ -3,10 +3,12 @@ package tmc.codec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public record InvolvedPlayersData(HashMap<UUID, Integer> players) {
 
@@ -32,6 +34,16 @@ public record InvolvedPlayersData(HashMap<UUID, Integer> players) {
         return this;
     }
 
+    public InvolvedPlayersData logPlayer(ServerPlayer player, int tickTimestamp, Consumer<ServerPlayer> onFirstInvolvement)
+    {
+        if (isPlayerInvolved(player))
+        {
+            return this;
+        }
+        onFirstInvolvement.accept(player);
+        return this.logPlayer(player, tickTimestamp);
+    }
+
     public boolean isPlayerInvolved(ServerPlayer player)
     {
         return this.isPlayerUUIDInvolved(player.getUUID());
@@ -45,6 +57,21 @@ public record InvolvedPlayersData(HashMap<UUID, Integer> players) {
     public InvolvedPlayersData removePlayerOnTick(ServerPlayer player, int ticks)
     {
         return this.removePlayerUUIDOnTick(player.getUUID(), ticks);
+    }
+
+    public InvolvedPlayersData removePlayerOnTick(ServerPlayer player, int ticks, Consumer<ServerPlayer> onRemoval)
+    {
+        if (!this.isPlayerInvolved(player))
+        {
+            return this;
+        }
+        if (ticks > this.players.get(player.getUUID()))
+        {
+            onRemoval.accept(player);
+            this.players.remove(player.getUUID());
+        }
+
+        return this;
     }
 
     public InvolvedPlayersData removePlayerUUIDOnTick(UUID uuid, int ticks)
@@ -63,7 +90,32 @@ public record InvolvedPlayersData(HashMap<UUID, Integer> players) {
 
     public InvolvedPlayersData removePlayer(ServerPlayer player)
     {
-        return removePlayerUUID(player.getUUID());
+        return this.removePlayerUUID(player.getUUID());
+    }
+
+    public InvolvedPlayersData removePlayer(ServerPlayer player, Consumer<ServerPlayer> onRemoval)
+    {
+        if (!this.players.containsKey(player.getUUID()))
+        {
+            return this;
+        }
+        onRemoval.accept(player);
+        return this.removePlayer(player);
+    }
+
+    public InvolvedPlayersData removeAllPlayers(MinecraftServer server, Consumer<ServerPlayer> onRemoval)
+    {
+        this.players.keySet().removeIf(uuid ->
+        {
+           ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+           if (player == null)
+           {
+               return true;
+           }
+           onRemoval.accept(player);
+           return true;
+        });
+        return this;
     }
 
     public InvolvedPlayersData removePlayerUUID(UUID uuid)

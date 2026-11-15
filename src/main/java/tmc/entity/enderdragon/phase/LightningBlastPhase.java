@@ -513,9 +513,6 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
                 continue;
             }
             zones.add(zone);
-//            int x = p.getBlockX() - half;
-//            int z = p.getBlockZ() - half;
-//            zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
         }
 
         for (ServerPlayer p : targets)
@@ -540,7 +537,6 @@ public class LightningBlastPhase extends AbstractDragonPhaseInstance {
                         continue;
                     }
                     zones.add(zone);
-//                    zones.add(new BlockPos(x, groundY(level, x + half, z + half, p.getY()), z));
                     break;
                 }
             }

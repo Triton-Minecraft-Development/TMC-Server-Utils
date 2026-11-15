@@ -25,8 +25,6 @@ public class ServerLevelMixin {
 
         // Attached to all levels, but only query the Overworld to update
         serverLevel.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
-
-        // Attached to all levels, but only query the End to update
         serverLevel.getAttachedOrCreate(TMCDataAttachments.ENDER_DRAGON_KEEP_INVENTORY);
     }
 }

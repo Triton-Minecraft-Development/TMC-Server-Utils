@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import net.fabricmc.loader.api.FabricLoader;
+import tmc.GameRules;
 import tmc.TMCServerUtils;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 public class ConfigManager
 {
@@ -35,7 +37,24 @@ public class ConfigManager
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH))
         {
             Config parsed = GSON.fromJson(reader, Config.class);
-            config = (parsed != null) ? parsed : new Config();
+            if (parsed == null)
+            {
+                config = new Config();
+                return;
+            }
+            Config newConfig = new Config();
+            if (parsed.gameRules.size() != newConfig.gameRules.size())
+            {
+                for (Map.Entry<GameRules, Boolean> entry : newConfig.gameRules.entrySet())
+                {
+                    if (parsed.gameRules.containsKey(entry.getKey()))
+                    {
+                        continue; // Don't overwrite old keys that still exist
+                    }
+                    parsed.gameRules.put(entry.getKey(), entry.getValue()); // New key found
+                }
+            }
+            config = parsed;
         }
         catch (IOException | JsonSyntaxException e)
         {

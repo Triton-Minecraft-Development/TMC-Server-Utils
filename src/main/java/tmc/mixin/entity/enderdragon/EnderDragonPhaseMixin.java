@@ -11,8 +11,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import tmc.GameRules;
+import tmc.config.ConfigManager;
 import tmc.entity.enderdragon.EnderDragonStage;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
+
+import java.util.EnumMap;
 
 /**
  * Mixin for Ender Dragon death that acts as a "safety net" in the event that
@@ -31,6 +35,11 @@ public abstract class EnderDragonPhaseMixin {
     {
         if (target == EnderDragonPhase.DYING)
         {
+            EnumMap<GameRules, Boolean> rules = ConfigManager.get().gameRules;
+            if (rules.containsKey(GameRules.ENDER_DRAGON_STAGE_2) && !rules.get(GameRules.ENDER_DRAGON_STAGE_2))
+            {
+                return;
+            }
             if (TMCEnderDragonManager.tryStartStage2(this.dragon))
             {
                 ci.cancel();

@@ -3,6 +3,8 @@ package tmc.attachments;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.server.level.ServerPlayer;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import tmc.TMCServerUtils;
 import tmc.codec.AttackerHistoryData;
 import tmc.codec.InvolvedPlayersData;
@@ -176,11 +178,23 @@ public class TMCDataAttachments {
                     .persistent(Codec.INT)
     );
 
-    public static final AttachmentType<InvolvedPlayersData> ENDER_DRAGON_KEEP_INVENTORY = AttachmentRegistry.create(
-            TMCServerUtils.of("ender_dragon_fight_keep_inventory"),
+//    public static final AttachmentType<InvolvedPlayersData> ENDER_DRAGON_KEEP_INVENTORY = AttachmentRegistry.create(
+//            TMCServerUtils.of("ender_dragon_fight_keep_inventory"),
+//            builder -> builder
+//                    .initializer(InvolvedPlayersData::new)
+//                    .persistent(InvolvedPlayersData.CODEC)
+//    );
+
+    /**
+     * Attachment for tracking keep inventory for the Ender Dragon.
+     * @see tmc.mixin.entity.player.ServerPlayerMixin#restoreFrom(ServerPlayer, boolean, CallbackInfo)
+     */
+    public static final AttachmentType<Boolean> PLAYER_KEEP_INVENTORY_ENDER_DRAGON = AttachmentRegistry.create(
+            TMCServerUtils.of("player_keep_inventory_ender_dragon"),
             builder -> builder
-                    .initializer(InvolvedPlayersData::new)
-                    .persistent(InvolvedPlayersData.CODEC)
+                    .initializer(() -> false)
+//                    .copyOnDeath()
+                    .persistent(Codec.BOOL)
     );
 
     public static final AttachmentType<Integer> PORTAL_HIGHLIGHT_LIFESPAN = AttachmentRegistry.create(

@@ -24,6 +24,7 @@ import tmc.codec.InvolvedPlayersData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
+import tmc.entity.player.KeepInventoryManager;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.mixin.entity.enderdragon.EnderDragonFightAccessor;
 
@@ -101,7 +102,7 @@ public class TMCEnderDragonManager {
         int ticks = getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
         dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
 
-        overworld.modifyAttached(TMCDataAttachments.ENDER_DRAGON_KEEP_INVENTORY, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks, p -> p.sendSystemMessage(EnderDragonEventHandler.NOTIFY_KEEP_INVENTORY_ON)));
+//        KeepInventoryManager.toggle(player, true, () -> player.sendSystemMessage(EnderDragonEventHandler.NOTIFY_KEEP_INVENTORY_ON));
     }
 
     public static HashMap<UUID, Float> getAllAttackers(EnderDragon dragon)

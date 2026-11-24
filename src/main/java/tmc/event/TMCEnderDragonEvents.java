@@ -67,6 +67,14 @@ public interface TMCEnderDragonEvents {
         }
     });
 
+    Event<OnDragonDefeat> ON_DRAGON_DEFEAT = EventFactory.createArrayBacked(OnDragonDefeat.class, callbacks -> (serverLevel, dragon) ->
+    {
+       for (OnDragonDefeat onDragonDefeat : callbacks)
+       {
+           onDragonDefeat.onDefeat(serverLevel, dragon);
+       }
+    });
+
     @FunctionalInterface
     interface StageTransition
     {
@@ -95,6 +103,12 @@ public interface TMCEnderDragonEvents {
     interface OnDialogueEnd
     {
         void onDialogueEnd(ServerLevel serverLevel, EnderDragon dragon, DialogueSequence dialogueSequence);
+    }
+
+    @FunctionalInterface
+    interface OnDragonDefeat
+    {
+        void onDefeat(ServerLevel serverLevel, EnderDragon dragon);
     }
 
 }

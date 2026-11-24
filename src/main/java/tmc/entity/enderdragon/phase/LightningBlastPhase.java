@@ -40,6 +40,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Lightning Blast attack the Ender Dragon can perform.
+ * <p>
+ *     The Ender Dragon will perch up in the sky {@linkplain LightningBlastPhase#PERCH_HEIGHT above the End exit portal},
+ *     and stay still for some amount of time, giving players a chance to attack her from range. Players are warned to watch their footing,
+ *     and end portals with pink highlights will appear around them. After {@linkplain LightningBlastPhase#CHARGE_TICKS charging time is complete},
+ *     lightning will strike any players that remain within the X and Z coordinates of any highlighted End Portal summoned by the attack.
+ *     By default, on medium difficulty, players are hit for 1/2 of their health as true damage and receive blindness for 5 seconds.
+ * </p>
+ *
+ *
+ */
 public class LightningBlastPhase extends AbstractDragonPhaseInstance {
 
     public static final String MARKER_TAG = "tmc_lightning_marker";

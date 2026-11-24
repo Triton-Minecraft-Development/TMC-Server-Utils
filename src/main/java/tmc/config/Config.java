@@ -18,4 +18,9 @@ public class Config
         gameRules.put(GameRules.HOPPER_MINECARTS_RETAIN_DEFAULT_SPEED, true);
         gameRules.put(GameRules.ENDER_DRAGON_STAGE_2, false);
     }
+
+    public boolean isEnabled(GameRules rules)
+    {
+        return this.gameRules.containsKey(rules) && this.gameRules.get(rules);
+    }
 }

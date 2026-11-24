@@ -57,6 +57,12 @@ public class TMCServerUtils implements ModInitializer
                 .orElse("Unknown Player");
     }
 
+    public static <T extends Entity> List<T> getEntitiesInRadius(ServerLevel level, Class<T> clazz, Vec3 center, double radius)
+    {
+        AABB searchArea = new AABB(center.x - radius / 2, center.y - radius / 2, center.z - radius / 2, center.x + radius / 2, center.y + radius / 2, center.z + radius / 2);
+        return level.getEntitiesOfClass(clazz, searchArea, isWithinRadius(center, radius));
+    }
+
     public static List<Entity> getEntitiesInRadius(Entity center, double radius)
     {
         return getEntitiesInRadius(center, Entity.class, radius);
@@ -72,6 +78,12 @@ public class TMCServerUtils implements ModInitializer
     {
         double radiusSqr = radius * radius;
         return target -> target != center && target.distanceToSqr(center) <= radiusSqr;
+    }
+
+    private static Predicate<Entity> isWithinRadius(Vec3 center, double radius)
+    {
+        double radiusSqr = radius * radius;
+        return target -> target.position().distanceTo(center) <= radiusSqr;
     }
 
     public static Optional<ServerLevel> getEndServerLevel(ServerLevel serverLevel)

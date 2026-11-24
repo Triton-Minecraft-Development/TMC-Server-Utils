@@ -39,31 +39,35 @@ public class PlayerMixin {
         {
             return;
         }
-        if (KeepInventoryManager.isEnabled(serverPlayer))
+        if (KeepInventoryManager.satisfies(serverPlayer))
         {
             ci.cancel();
-            return;
         }
-        if (serverPlayer.getLastHurtByMob() != null && serverPlayer.getLastHurtByMob() instanceof EnderDragon dragon)
-        {
-            if (isInRange(serverPlayer, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-            {
-                ci.cancel();
-                return;
-            }
-        }
-        List<? extends EnderDragon> dragons = level.getDragons();
-        if (isInRange(serverPlayer, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-        {
-            for (EnderDragon dragon : dragons)
-            {
-                if (isInRange(serverPlayer, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-                {
-                    ci.cancel();
-                    return;
-                }
-            }
-        }
+//        if (KeepInventoryManager.isEnabled(serverPlayer))
+//        {
+//            ci.cancel();
+//            return;
+//        }
+//        if (serverPlayer.getLastHurtByMob() != null && serverPlayer.getLastHurtByMob() instanceof EnderDragon dragon)
+//        {
+//            if (isInRange(serverPlayer, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
+//            {
+//                ci.cancel();
+//                return;
+//            }
+//        }
+//        List<? extends EnderDragon> dragons = level.getDragons();
+//        if (isInRange(serverPlayer, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
+//        {
+//            for (EnderDragon dragon : dragons)
+//            {
+//                if (isInRange(serverPlayer, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
+//                {
+//                    ci.cancel();
+//                    return;
+//                }
+//            }
+//        }
 
     }
 }

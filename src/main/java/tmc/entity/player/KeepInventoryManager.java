@@ -1,7 +1,13 @@
 package tmc.entity.player;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.phys.Vec3;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
+import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 public class KeepInventoryManager {
 
@@ -24,5 +30,36 @@ public class KeepInventoryManager {
         return player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON);
     }
 
+    public static boolean satisfies(ServerPlayer player)
+    {
+        if (isEnabled(player))
+        {
+            return true;
+        }
+        if (!player.isAlive())
+        {
+            return false;
+        }
+        ServerLevel level = player.level();
+        if (!level.dimension().identifier().equals(ServerLevel.END.identifier()))
+        {
+            return false;
+        }
+        if (player.getLastHurtByMob() != null && player.getLastHurtByMob() instanceof EnderDragon)
+        {
+            return true;
+        }
+        boolean hasDragon = !level.getDragons().isEmpty();
+        return hasDragon && TMCServerUtils.isInRange(player, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE);
+    }
+
+    public static boolean satisfies(ServerPlayer player, Entity killer)
+    {
+        if (killer == null)
+        {
+            return satisfies(player);
+        }
+        return killer instanceof EnderDragon || satisfies(player);
+    }
 
 }

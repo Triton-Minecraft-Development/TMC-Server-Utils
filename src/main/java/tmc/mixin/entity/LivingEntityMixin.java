@@ -39,29 +39,33 @@ public abstract class LivingEntityMixin {
         {
             return;
         }
-        if (killer instanceof EnderDragon)
-        {
-            ci.cancel(); // Killed by dragon
-            return;
-        }
-
-        if (KeepInventoryManager.isEnabled(player))
+        if (KeepInventoryManager.satisfies(player, killer))
         {
             ci.cancel();
-            return;
         }
-        List<? extends EnderDragon> dragons = level.getDragons();
-        if (isInRange(player, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-        {
-            for (EnderDragon dragon : dragons)
-            {
-                if (isInRange(player, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-                {
-                    ci.cancel();
-                    return;
-                }
-            }
-        }
+//        if (killer instanceof EnderDragon)
+//        {
+//            ci.cancel(); // Killed by dragon
+//            return;
+//        }
+//
+//        if (KeepInventoryManager.isEnabled(player))
+//        {
+//            ci.cancel();
+//            return;
+//        }
+//        List<? extends EnderDragon> dragons = level.getDragons();
+//        if (isInRange(player, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
+//        {
+//            for (EnderDragon dragon : dragons)
+//            {
+//                if (isInRange(player, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
+//                {
+//                    ci.cancel();
+//                    return;
+//                }
+//            }
+//        }
 
     }
 }

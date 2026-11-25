@@ -1,5 +1,7 @@
 package tmc.entity.player;
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -9,6 +11,7 @@ import tmc.GameRules;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.config.ConfigManager;
+import tmc.entity.enderdragon.EnderDragonEventHandler;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 
 public class KeepInventoryManager {

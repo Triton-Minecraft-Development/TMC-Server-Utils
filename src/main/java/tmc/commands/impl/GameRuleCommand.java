@@ -5,10 +5,16 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import tmc.GameRules;
+import tmc.attachments.TMCDataAttachments;
 import tmc.commands.Command;
 import tmc.config.ConfigManager;
+import tmc.entity.enderdragon.EnderDragonEventHandler;
+import tmc.entity.player.KeepInventoryManager;
 
 import java.util.Map;
 
@@ -38,6 +44,20 @@ public class GameRuleCommand extends Command
                         boolean value = BoolArgumentType.getBool(ctx, "value");
                         ConfigManager.get().set(entry.getKey(), value);
                         ConfigManager.save();
+
+                        // Forces keep-inventory shut off when set to false
+                        // Ensures no edge cases get by when this is disabled
+                        if (entry.getKey() == GameRules.ENDER_DRAGON_KEEP_INVENTORY && !value)
+                        {
+                            MinecraftServer server = ctx.getSource().getServer();
+                            for (ServerLevel level : server.getAllLevels())
+                            {
+                                for (ServerPlayer player : level.getPlayers(player -> player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON)))
+                                {
+                                    KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(EnderDragonEventHandler.WARN_KEEP_INVENTORY_OFF));
+                                }
+                            }
+                        }
                         ctx.getSource().sendSuccess(() -> Component.literal(name + " is now " + value), true);
                         return value ? 1 : 0;
                     })));

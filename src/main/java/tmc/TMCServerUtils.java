@@ -21,6 +21,7 @@ import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.EnderDragonEventHandler;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.enderdragon.WarningManager;
+import tmc.entity.player.KeepInventoryManager;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -109,5 +110,6 @@ public class TMCServerUtils implements ModInitializer
         TMCDamageTypes.initialize();
         WarningManager.AlarmSound.register();
         new EnderDragonEventHandler();
+        new KeepInventoryManager();
     }
 }

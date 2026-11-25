@@ -22,7 +22,7 @@ public class GameRuleCommand extends Command
     @Override
     protected ArgumentBuilder<CommandSourceStack, ?> buildArgs(ArgumentBuilder<CommandSourceStack, ?> cmd)
     {
-        for (Map.Entry<GameRules, Boolean> entry : ConfigManager.get().gameRules.entrySet())
+        for (Map.Entry<GameRules, Boolean> entry : ConfigManager.get().getGameRules().entrySet())
         {
             String name = entry.getKey().name();
             cmd.then(Commands.literal(name)
@@ -36,7 +36,7 @@ public class GameRuleCommand extends Command
                     .executes(ctx ->
                     {
                         boolean value = BoolArgumentType.getBool(ctx, "value");
-                        ConfigManager.get().gameRules.put(entry.getKey(), value);
+                        ConfigManager.get().set(entry.getKey(), value);
                         ConfigManager.save();
                         ctx.getSource().sendSuccess(() -> Component.literal(name + " is now " + value), true);
                         return value ? 1 : 0;

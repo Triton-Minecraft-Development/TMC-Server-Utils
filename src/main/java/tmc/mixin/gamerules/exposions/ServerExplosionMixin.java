@@ -14,7 +14,7 @@ public abstract class ServerExplosionMixin
     @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
     private void onDisableExplosionDamage(CallbackInfoReturnable<Integer> cir)
     {
-        boolean enabled = (ConfigManager.get().gameRules.get(GameRules.DISABLE_EXPLOSION_DAMAGE));
+        boolean enabled = (ConfigManager.get().isEnabled(GameRules.DISABLE_EXPLOSION_DAMAGE));
         if (enabled) cir.cancel();
     }
 }

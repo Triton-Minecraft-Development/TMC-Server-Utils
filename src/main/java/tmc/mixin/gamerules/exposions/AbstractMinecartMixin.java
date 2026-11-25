@@ -29,7 +29,7 @@ public abstract class AbstractMinecartMixin
     @SuppressWarnings("ConstantValue")
     private boolean hopperMinecartIgnoreExperimentalSpeed(boolean experimental)
     {
-        boolean enabled = (ConfigManager.get().gameRules.get(GameRules.HOPPER_MINECARTS_RETAIN_DEFAULT_SPEED));
+        boolean enabled = (ConfigManager.get().isEnabled(GameRules.HOPPER_MINECARTS_RETAIN_DEFAULT_SPEED));
         if (enabled)
         {
             return experimental && !((Object) this instanceof MinecartHopper);

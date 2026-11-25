@@ -62,10 +62,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
 
-    public static final Component NOTIFY_KEEP_INVENTORY_ON = Component.literal(ChatFormatting.GREEN + "You have entered combat with the Ender Dragon! Your inventory and experience collected will be saved while in combat!");
-    public static final Component NOTIFY_KEEP_INVENTORY = Component.literal(ChatFormatting.AQUA + "Your death was relevant to Ender Dragon combat. Your inventory and experience collected are safe.");
-    public static final Component WARN_KEEP_INVENTORY_OFF = Component.literal(ChatFormatting.RED + "You have left combat with the Ender Dragon. Your inventory and experience are no longer protected.");
-    public static final Component WARN_KEEP_INVENTORY_OFF_DEFEAT = Component.literal(ChatFormatting.RED + "The Ender Dragon has been defeated. Your inventory is no longer protected.");
 
     public EnderDragonEventHandler()
     {
@@ -91,7 +87,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             {
                 if (KeepInventoryManager.isEnabled(player))
                 {
-                    player.sendSystemMessage(NOTIFY_KEEP_INVENTORY);
+                    player.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY);
                 }
             }
             return true;
@@ -208,14 +204,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     player.sendSystemMessage(COMMAND_MESSAGE);
                 });
                 TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(serverLevel, dragon);
-//                boolean lastRemaining = serverLevel.getDragons().size() - 1 == 0;
-//                if (lastRemaining || serverLevel.getDragons().isEmpty()) // Last dragon is doing death animation
-//                {
-//                    for (ServerPlayer player : serverLevel.getPlayers(KeepInventoryManager::isEnabled))
-//                    {
-//                        KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(WARN_KEEP_INVENTORY_OFF_DEFEAT));
-//                    }
-//                }
             }
         }
     }
@@ -229,10 +217,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             {
                 if (KeepInventoryManager.satisfies(serverPlayer) && enderDragon.getPhaseManager().getCurrentPhase().getPhase() != EnderDragonPhase.DYING)
                 {
-                    KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(NOTIFY_KEEP_INVENTORY_ON));
+                    KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY_ON));
                     continue;
                 }
-                KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(WARN_KEEP_INVENTORY_OFF));
+                KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
             }
         }
         if (stage != EnderDragonStage.STAGE_2)
@@ -340,7 +328,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         {
             for (ServerPlayer player : serverLevel.getPlayers(KeepInventoryManager::isEnabled))
             {
-                KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(WARN_KEEP_INVENTORY_OFF_DEFEAT));
+                KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF_DEFEAT));
             }
         }
     }
@@ -383,7 +371,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     {
         if (KeepInventoryManager.isEnabled(oldPlayer))
         {
-            newPlayer.sendSystemMessage(WARN_KEEP_INVENTORY_OFF);
+            newPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF);
         }
     }
 

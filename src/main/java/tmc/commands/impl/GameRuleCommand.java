@@ -54,7 +54,7 @@ public class GameRuleCommand extends Command
                             {
                                 for (ServerPlayer player : level.getPlayers(player -> player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON)))
                                 {
-                                    KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(EnderDragonEventHandler.WARN_KEEP_INVENTORY_OFF));
+                                    KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
                                 }
                             }
                         }

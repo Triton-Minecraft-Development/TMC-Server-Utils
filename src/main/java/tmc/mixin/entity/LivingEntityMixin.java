@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.player.KeepInventoryManager;
+import tmc.event.TMCEnderDragonEvents;
 
 import java.util.List;
 
@@ -43,29 +44,20 @@ public abstract class LivingEntityMixin {
         {
             ci.cancel();
         }
-//        if (killer instanceof EnderDragon)
-//        {
-//            ci.cancel(); // Killed by dragon
-//            return;
-//        }
-//
-//        if (KeepInventoryManager.isEnabled(player))
-//        {
-//            ci.cancel();
-//            return;
-//        }
-//        List<? extends EnderDragon> dragons = level.getDragons();
-//        if (isInRange(player, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-//        {
-//            for (EnderDragon dragon : dragons)
-//            {
-//                if (isInRange(player, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-//                {
-//                    ci.cancel();
-//                    return;
-//                }
-//            }
-//        }
+    }
 
+    @Inject(method = "remove", at = @At("TAIL"))
+    private void remove(Entity.RemovalReason reason, CallbackInfo ci)
+    {
+        LivingEntity entity = (LivingEntity) (Object) this;
+        if (entity.level().isClientSide())
+        {
+            return;
+        }
+        if (!(entity instanceof EnderDragon dragon) || !(entity.level() instanceof ServerLevel level))
+        {
+            return;
+        }
+        TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(level, dragon);
     }
 }

@@ -233,23 +233,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     continue;
                 }
                 KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(WARN_KEEP_INVENTORY_OFF));
-//                if (!serverLevel.dimension().identifier().equals(serverPlayer.level().dimension().identifier()))
-//                {
-//                    // Not in same dimension
-//                    KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(WARN_KEEP_INVENTORY_OFF));
-//                    continue;
-//                }
-//                if (!TMCServerUtils.isInRange(serverPlayer, enderDragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-//                {
-//                    if (!serverPlayer.isAlive())
-//                    {
-//                        continue; // Player is dead. Only allow the notification of a saved inventory
-//                    }
-//                    // Player is no longer near the dragon
-//                    KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(WARN_KEEP_INVENTORY_OFF));
-//                    continue;
-//                }
-//                KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(NOTIFY_KEEP_INVENTORY_ON));
             }
         }
         if (stage != EnderDragonStage.STAGE_2)
@@ -316,10 +299,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             {
                 TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(level, dragon);
             }
-//            for (ServerPlayer player : level.getPlayers(KeepInventoryManager::isEnabled))
-//            {
-//                KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(WARN_KEEP_INVENTORY_OFF_DEFEAT));
-//            }
             return;
         }
         if (damageSource.getEntity() == null)

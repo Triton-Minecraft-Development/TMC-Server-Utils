@@ -41,34 +41,10 @@ public class ServerPlayerMixin {
     private void restoreFrom(ServerPlayer oldPlayer, boolean restoreAll, CallbackInfo ci)
     {
         ServerPlayer current = (ServerPlayer) (Object) this;
-        if (KeepInventoryManager.satisfies(oldPlayer))
+        if (KeepInventoryManager.satisfiesRespawn(oldPlayer))
         {
             keepInventory(current, oldPlayer);
         }
-//        if (oldPlayer.getLastHurtByMob() != null && oldPlayer.getLastHurtByMob() instanceof EnderDragon)
-//        {
-//            keepInventory(current, oldPlayer);
-//            return;
-//        }
-//
-//        if (KeepInventoryManager.isEnabled(oldPlayer))
-//        {
-//            keepInventory(current, oldPlayer);
-//            return;
-//        }
-//        ServerLevel oldLevel = oldPlayer.level();
-//        List<? extends EnderDragon> dragons = oldLevel.getDragons();
-//        if (isInRange(oldPlayer, Vec3.ZERO, TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-//        {
-//            for (EnderDragon dragon : dragons)
-//            {
-//                if (isInRange(oldPlayer, dragon.position(), TMCEnderDragonManager.KEEP_INVENTORY_DISTANCE))
-//                {
-//                    keepInventory(current, oldPlayer);
-//                    return;
-//                }
-//            }
-//        }
 
     }
 

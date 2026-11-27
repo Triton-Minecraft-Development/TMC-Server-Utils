@@ -52,7 +52,7 @@ public class GameRuleCommand extends Command
                             MinecraftServer server = ctx.getSource().getServer();
                             for (ServerLevel level : server.getAllLevels())
                             {
-                                for (ServerPlayer player : level.getPlayers(player -> player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON)))
+                                for (ServerPlayer player : level.getPlayers(player -> player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON) && player.isAlive()))
                                 {
                                     KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
                                 }

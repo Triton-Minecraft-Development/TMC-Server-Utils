@@ -39,7 +39,7 @@ import java.util.*;
 public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
         TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
         TMCEnderDragonEvents.PhaseTick, TMCEnderDragonEvents.OnDragonDefeat, ServerLivingEntityEvents.AfterDeath,
-        ServerPlayerEvents.Join, ServerPlayerEvents.Leave, ServerPlayerEvents.AfterRespawn {
+        ServerPlayerEvents.Join, ServerPlayerEvents.Leave {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -72,7 +72,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         TMCEnderDragonEvents.ON_STAGE_TICK.register(this);
         ServerLivingEntityEvents.AFTER_DEATH.register(this);
         TMCEnderDragonEvents.ON_DRAGON_DEFEAT.register(this);
-        ServerPlayerEvents.AFTER_RESPAWN.register(this);
 
         ServerPlayerEvents.JOIN.register(this);
         ServerPlayerEvents.LEAVE.register(this);
@@ -211,18 +210,18 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     @Override
     public void onStageTick(ServerLevel serverLevel, EnderDragon enderDragon, EnderDragonStage stage, int ticks)
     {
-        if (stage != EnderDragonStage.DEATH)
-        {
-            for (ServerPlayer serverPlayer : serverLevel.getServer().getPlayerList().getPlayers())
-            {
-                if (KeepInventoryManager.satisfies(serverPlayer) && enderDragon.getPhaseManager().getCurrentPhase().getPhase() != EnderDragonPhase.DYING)
-                {
-                    KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY_ON));
-                    continue;
-                }
-                KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
-            }
-        }
+//        if (stage != EnderDragonStage.DEATH)
+//        {
+//            for (ServerPlayer serverPlayer : serverLevel.getServer().getPlayerList().getPlayers())
+//            {
+//                if (KeepInventoryManager.satisfies(serverPlayer) && enderDragon.getPhaseManager().getCurrentPhase().getPhase() != EnderDragonPhase.DYING)
+//                {
+//                    KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY_ON));
+//                    continue;
+//                }
+//                KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
+//            }
+//        }
         if (stage != EnderDragonStage.STAGE_2)
         {
             return;
@@ -283,10 +282,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             {
                 return;
             }
-            if (!ConfigManager.get().isEnabled(GameRules.ENDER_DRAGON_STAGE_2))
-            {
-                TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(level, dragon);
-            }
+            TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(level, dragon); // Should be invoked regardless of if the rule is enabled/disabled.
             return;
         }
         if (damageSource.getEntity() == null)
@@ -364,15 +360,6 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
             return;
         }
         dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.removePlayer(player));
-    }
-
-    @Override
-    public void afterRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive)
-    {
-        if (KeepInventoryManager.isEnabled(oldPlayer))
-        {
-            newPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF);
-        }
     }
 
     private List<EnderDragonPhase<?>> readyAttacks(boolean diveBomb, boolean fireballBarrage, boolean lightningBlast)

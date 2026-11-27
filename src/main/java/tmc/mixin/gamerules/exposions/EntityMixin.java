@@ -6,6 +6,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,7 +25,7 @@ public abstract class EntityMixin
         if (enabled)
         {
             Vec3 sourcePosition = source.getSourcePosition();
-            if (source.getDirectEntity() instanceof EndCrystal || sourcePosition != null && source.typeHolder().is(DamageTypes.BAD_RESPAWN_POINT.identifier()))
+            if (source.getDirectEntity() instanceof EndCrystal || source.getDirectEntity() instanceof MinecartTNT || sourcePosition != null && source.typeHolder().is(DamageTypes.BAD_RESPAWN_POINT.identifier()))
             {
                 cir.cancel();
             }

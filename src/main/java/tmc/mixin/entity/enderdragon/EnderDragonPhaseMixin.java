@@ -35,8 +35,7 @@ public abstract class EnderDragonPhaseMixin {
     {
         if (target == EnderDragonPhase.DYING)
         {
-            EnumMap<GameRules, Boolean> rules = ConfigManager.get().gameRules;
-            if (rules.containsKey(GameRules.ENDER_DRAGON_STAGE_2) && !rules.get(GameRules.ENDER_DRAGON_STAGE_2))
+            if (!ConfigManager.get().isEnabled(GameRules.ENDER_DRAGON_STAGE_2))
             {
                 return;
             }

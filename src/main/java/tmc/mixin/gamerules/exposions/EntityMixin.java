@@ -21,7 +21,7 @@ public abstract class EntityMixin
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     private void cancelPvpExplosionItemDeletion(ServerLevel level, DamageSource source, float damage, CallbackInfoReturnable<Boolean> cir)
     {
-        boolean enabled = (ConfigManager.get().gameRules.get(GameRules.PVP_EXPLOSIONS_DONT_DELETE_DROPS));
+        boolean enabled = (ConfigManager.get().isEnabled(GameRules.PVP_EXPLOSIONS_DONT_DELETE_DROPS));
         if (enabled)
         {
             Vec3 sourcePosition = source.getSourcePosition();

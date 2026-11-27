@@ -43,15 +43,15 @@ public class ConfigManager
                 return;
             }
             Config newConfig = new Config();
-            if (parsed.gameRules.size() != newConfig.gameRules.size())
+            if (parsed.getGameRules().size() != newConfig.getGameRules().size())
             {
-                for (Map.Entry<GameRules, Boolean> entry : newConfig.gameRules.entrySet())
+                for (Map.Entry<GameRules, Boolean> entry : newConfig.getGameRules().entrySet())
                 {
-                    if (parsed.gameRules.containsKey(entry.getKey()))
+                    if (parsed.hasRule(entry.getKey()))
                     {
                         continue; // Don't overwrite old keys that still exist
                     }
-                    parsed.gameRules.put(entry.getKey(), entry.getValue()); // New key found
+                    parsed.set(entry.getKey(), entry.getValue()); // New key found
                 }
             }
             config = parsed;

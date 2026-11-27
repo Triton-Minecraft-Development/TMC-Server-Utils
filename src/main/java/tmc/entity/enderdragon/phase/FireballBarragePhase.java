@@ -35,6 +35,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+/**
+ * Fireball Barrage attack for the Ender Dragon. Uses a DBSCAN (Density-Based Spatial Cluster of Applications
+ * with Noise) to find the most condensed group of players and rain fireballs on them. If a grouping that
+ * satisfies the requirements for a group fireball barrage cannot be found, she will select a player at random
+ * to target.
+ */
 public class FireballBarragePhase extends AbstractDragonPhaseInstance {
 
     private static final double MIN_HORIZONTAL = 18;

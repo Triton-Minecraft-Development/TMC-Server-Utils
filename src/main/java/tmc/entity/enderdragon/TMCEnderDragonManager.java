@@ -18,21 +18,24 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import net.minecraft.world.phys.Vec3;
+import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.InvolvedPlayersData;
 import tmc.codec.enderdragon.EnderDragonLeaderboard;
 import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.phase.*;
+import tmc.entity.player.KeepInventoryManager;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.mixin.entity.enderdragon.EnderDragonFightAccessor;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 
 public class TMCEnderDragonManager {
 
     private static final float STAGE_2_HEALTH = 1024f; // Attribute limit
-
+    public static final double KEEP_INVENTORY_DISTANCE = 192; // Euclidean distance from the origin of the End Island
     private static final double BLAST_RADIUS = 50;
     private static final double MAX_HORIZONTAL = 3.5;
     private static final double MIN_HORIZONTAL = 0.8;
@@ -90,14 +93,16 @@ public class TMCEnderDragonManager {
         {
             return;
         }
-        ServerLevel level = player.level().getServer().overworld();
-        EnderDragonLeaderboard leaderboard = level.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
+        ServerLevel overworld = player.level().getServer().overworld();
+        EnderDragonLeaderboard leaderboard = overworld.getAttachedOrCreate(TMCDataAttachments.SERVER_ENDER_DRAGON_LEADERBOARD);
         if (!leaderboard.isPlayerBanned(player.getUUID()))
         {
             dragon.modifyAttached(TMCDataAttachments.LOGGED_ATTACKERS, attackerHistoryData -> attackerHistoryData.updateAttacker(player.getUUID(), damage));
         }
         int ticks = getStageTimerTicks(dragon, EnderDragonStage.STAGE_2);
         dragon.modifyAttached(TMCDataAttachments.INVOLVED_PLAYERS_DATA, data -> data.logPlayer(player, InvolvedPlayersData.DURATION_TICKS + ticks));
+
+//        KeepInventoryManager.toggle(player, true, () -> player.sendSystemMessage(EnderDragonEventHandler.NOTIFY_KEEP_INVENTORY_ON));
     }
 
     public static HashMap<UUID, Float> getAllAttackers(EnderDragon dragon)
@@ -262,7 +267,7 @@ public class TMCEnderDragonManager {
 
     /**
      * Ticks the timer for the given Ender Dragon and {@linkplain EnderDragonStage Ender Dragon fight stage} and calls the {@linkplain TMCEnderDragonEvents#ON_STAGE_TICK stage tick update event}
-     * @param serverLevel The current server level of the dragon
+     * @param serverLevel The current server overworld of the dragon
      * @param dragon The dragon to update
      * @param stage The current {@linkplain EnderDragonStage Ender Dragon Stage} to tick
      */

@@ -7,7 +7,7 @@ import java.util.EnumMap;
 
 public class Config
 {
-    public EnumMap<GameRules, Boolean> gameRules = new EnumMap<>(GameRules.class);
+    private final EnumMap<GameRules, Boolean> gameRules = new EnumMap<>(GameRules.class);
 
     public LocalDate serverStartDate = LocalDate.of(2026, 10, 9);
 
@@ -17,5 +17,26 @@ public class Config
         gameRules.put(GameRules.PVP_EXPLOSIONS_DONT_DELETE_DROPS, true);
         gameRules.put(GameRules.HOPPER_MINECARTS_RETAIN_DEFAULT_SPEED, true);
         gameRules.put(GameRules.ENDER_DRAGON_STAGE_2, false);
+        gameRules.put(GameRules.ENDER_DRAGON_KEEP_INVENTORY, true);
+    }
+
+    public boolean isEnabled(GameRules rules)
+    {
+        return this.gameRules.containsKey(rules) && this.gameRules.get(rules);
+    }
+
+    public boolean hasRule(GameRules rules)
+    {
+        return this.gameRules.containsKey(rules);
+    }
+
+    public void set(GameRules rules, boolean b)
+    {
+        this.gameRules.put(rules, b);
+    }
+
+    public EnumMap<GameRules, Boolean> getGameRules()
+    {
+        return new EnumMap<>(this.gameRules);
     }
 }

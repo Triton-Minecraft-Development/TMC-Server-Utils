@@ -5,14 +5,13 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tmc.attachments.TMCDataAttachments;
@@ -22,13 +21,10 @@ import tmc.damagetypes.TMCDamageTypes;
 import tmc.entity.enderdragon.EnderDragonEventHandler;
 import tmc.entity.enderdragon.TMCEnderDragonManager;
 import tmc.entity.enderdragon.WarningManager;
+import tmc.entity.player.KeepInventoryManager;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class TMCServerUtils implements ModInitializer
 {
@@ -62,6 +58,12 @@ public class TMCServerUtils implements ModInitializer
                 .orElse("Unknown Player");
     }
 
+    public static <T extends Entity> List<T> getEntitiesInRadius(ServerLevel level, Class<T> clazz, Vec3 center, double radius)
+    {
+        AABB searchArea = new AABB(center.x - radius / 2, center.y - radius / 2, center.z - radius / 2, center.x + radius / 2, center.y + radius / 2, center.z + radius / 2);
+        return level.getEntitiesOfClass(clazz, searchArea, isWithinRadius(center, radius));
+    }
+
     public static List<Entity> getEntitiesInRadius(Entity center, double radius)
     {
         return getEntitiesInRadius(center, Entity.class, radius);
@@ -79,6 +81,23 @@ public class TMCServerUtils implements ModInitializer
         return target -> target != center && target.distanceToSqr(center) <= radiusSqr;
     }
 
+    private static Predicate<Entity> isWithinRadius(Vec3 center, double radius)
+    {
+        double radiusSqr = radius * radius;
+        return target -> target.position().distanceTo(center) <= radiusSqr;
+    }
+
+    public static Optional<ServerLevel> getEndServerLevel(ServerLevel serverLevel)
+    {
+        return Optional.ofNullable(serverLevel.getServer().getLevel(ServerLevel.END));
+    }
+
+    public static boolean isInRange(ServerPlayer player, Vec3 targetPos, double distance)
+    {
+        double xzDistance = Math.sqrt(Math.pow(player.getX() - targetPos.x, 2) + Math.pow(player.getZ() - targetPos.z, 2));
+        return xzDistance <= distance;
+    }
+
     @Override
     public void onInitialize()
     {
@@ -91,5 +110,6 @@ public class TMCServerUtils implements ModInitializer
         TMCDamageTypes.initialize();
         WarningManager.AlarmSound.register();
         new EnderDragonEventHandler();
+        new KeepInventoryManager();
     }
 }

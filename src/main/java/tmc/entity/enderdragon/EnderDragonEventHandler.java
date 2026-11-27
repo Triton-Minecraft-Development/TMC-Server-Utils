@@ -18,14 +18,16 @@ import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManager;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
+import net.minecraft.world.phys.Vec3;
 import tmc.GameRules;
 import tmc.TMCServerUtils;
 import tmc.attachments.TMCDataAttachments;
 import tmc.codec.enderdragon.*;
 import tmc.commands.impl.EnderDragonStatsCommand;
-import tmc.config.Config;
 import tmc.config.ConfigManager;
+import tmc.entity.player.KeepInventoryManager;
 import tmc.event.TMCEnderDragonEvents;
 import tmc.util.PlayerClusterScanner;
 
@@ -36,7 +38,8 @@ import java.util.*;
  */
 public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDeath,
         TMCEnderDragonEvents.StageTransition, TMCEnderDragonEvents.DialogueTick, TMCEnderDragonEvents.OnDialogueEnd,
-        TMCEnderDragonEvents.PhaseTick, ServerLivingEntityEvents.AfterDeath, ServerPlayerEvents.Leave {
+        TMCEnderDragonEvents.PhaseTick, TMCEnderDragonEvents.OnDragonDefeat, ServerLivingEntityEvents.AfterDeath,
+        ServerPlayerEvents.Join, ServerPlayerEvents.Leave {
 
     private static final int TITLE_FADE_IN_TIME_TICKS = 10;
     private static final int INITIAL_TITLE_DURATION_TICKS = 60;
@@ -59,6 +62,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
 
     private static final Component FIRST_DRAGON_KILL = Component.literal(ChatFormatting.BOLD + "" + ChatFormatting.GOLD + "Congratulations!" + ChatFormatting.RESET + ChatFormatting.LIGHT_PURPLE + " This was your first Ender Dragon kill!");
 
+
     public EnderDragonEventHandler()
     {
         ServerLivingEntityEvents.ALLOW_DEATH.register(this);
@@ -67,6 +71,10 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
         TMCEnderDragonEvents.ON_DIALOGUE_END.register(this);
         TMCEnderDragonEvents.ON_STAGE_TICK.register(this);
         ServerLivingEntityEvents.AFTER_DEATH.register(this);
+        TMCEnderDragonEvents.ON_DRAGON_DEFEAT.register(this);
+
+        ServerPlayerEvents.JOIN.register(this);
+        ServerPlayerEvents.LEAVE.register(this);
     }
 
     @Override
@@ -74,10 +82,17 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     {
         if (!(entity instanceof EnderDragon enderDragon) || !enderDragon.hasAttached(TMCDataAttachments.ENDER_DRAGON_TRANSITION_DATA))
         {
+            if (entity instanceof ServerPlayer player)
+            {
+                if (KeepInventoryManager.isEnabled(player))
+                {
+                    player.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY);
+                }
+            }
             return true;
         }
-        EnumMap<GameRules, Boolean> rules = ConfigManager.get().gameRules;
-        if (rules.containsKey(GameRules.ENDER_DRAGON_STAGE_2) && !rules.get(GameRules.ENDER_DRAGON_STAGE_2))
+
+        if (!ConfigManager.get().isEnabled(GameRules.ENDER_DRAGON_STAGE_2))
         {
             return true;
         }
@@ -187,6 +202,7 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
                     }
                     player.sendSystemMessage(COMMAND_MESSAGE);
                 });
+                TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(serverLevel, dragon);
             }
         }
     }
@@ -194,6 +210,18 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     @Override
     public void onStageTick(ServerLevel serverLevel, EnderDragon enderDragon, EnderDragonStage stage, int ticks)
     {
+//        if (stage != EnderDragonStage.DEATH)
+//        {
+//            for (ServerPlayer serverPlayer : serverLevel.getServer().getPlayerList().getPlayers())
+//            {
+//                if (KeepInventoryManager.satisfies(serverPlayer) && enderDragon.getPhaseManager().getCurrentPhase().getPhase() != EnderDragonPhase.DYING)
+//                {
+//                    KeepInventoryManager.toggle(serverPlayer, true, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.NOTIFY_KEEP_INVENTORY_ON));
+//                    continue;
+//                }
+//                KeepInventoryManager.toggle(serverPlayer, false, () -> serverPlayer.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF));
+//            }
+//        }
         if (stage != EnderDragonStage.STAGE_2)
         {
             return;
@@ -244,6 +272,19 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
     @Override
     public void afterDeath(LivingEntity entity, DamageSource damageSource)
     {
+        if (!(entity.level() instanceof ServerLevel level))
+        {
+            return;
+        }
+        if (entity instanceof EnderDragon dragon)
+        {
+            if (dragon.getPhaseManager().getCurrentPhase().getPhase() != EnderDragonPhase.DYING || !level.dimension().identifier().equals(ServerLevel.END.identifier()))
+            {
+                return;
+            }
+            TMCEnderDragonEvents.ON_DRAGON_DEFEAT.invoker().onDefeat(level, dragon); // Should be invoked regardless of if the rule is enabled/disabled.
+            return;
+        }
         if (damageSource.getEntity() == null)
         {
             return;
@@ -273,6 +314,26 @@ public class EnderDragonEventHandler implements ServerLivingEntityEvents.AllowDe
 
             dragon.modifyAttached(TMCDataAttachments.ENDER_DRAGON_DIALOGUE_COOLDOWN_DATA, data -> data.setKillPlayerCooldown(ticks + DialogueCooldownData.KILL_PLAYER_COOLDOWN_TICKS));
         }
+    }
+
+    @Override
+    public void onDefeat(ServerLevel serverLevel, EnderDragon dragon)
+    {
+        boolean lastRemaining = serverLevel.getDragons().size() - 1 == 0;
+        if (lastRemaining || serverLevel.getDragons().isEmpty()) // Last dragon is doing death animation
+        {
+            for (ServerPlayer player : serverLevel.getPlayers(KeepInventoryManager::isEnabled))
+            {
+                KeepInventoryManager.toggle(player, false, () -> player.sendSystemMessage(KeepInventoryManager.WARN_KEEP_INVENTORY_OFF_DEFEAT));
+            }
+        }
+    }
+
+    @Override
+    public void onJoin(ServerPlayer player)
+    {
+        player.getAttachedOrCreate(TMCDataAttachments.PLAYER_WARNING_TITLES_DATA);
+        player.getAttachedOrCreate(TMCDataAttachments.PLAYER_KEEP_INVENTORY_ENDER_DRAGON);
     }
 
     @Override

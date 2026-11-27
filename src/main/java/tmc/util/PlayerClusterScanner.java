@@ -31,7 +31,7 @@ public class PlayerClusterScanner {
      */
     public static final boolean FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE = true;
 
-    public static Optional<DiveTarget> findDiveTarget(ServerLevel level, double scanRadius, double eps, double minPts, boolean fallbackToSingle)
+    public static Optional<DiveTarget> findDiveTarget(ServerLevel level, double scanRadius, double eps, int minPts, boolean fallbackToSingle)
     {
         final double r2 = scanRadius * scanRadius;
 
@@ -46,7 +46,7 @@ public class PlayerClusterScanner {
         }
 
         List<Vec3> points = candidates.stream().map(Entity::position).toList();
-        int[] labels = DBSCAN.cluster(points, EPS_ENDER_DRAGON_DIVE, MIN_PTS_ENDER_DRAGON_DIVE);
+        int[] labels = DBSCAN.cluster(points, eps, minPts);
 
         // Group the player indices by cluster id. Skip noise
         Int2ObjectOpenHashMap<List<ServerPlayer>> clusters = new Int2ObjectOpenHashMap<>();
@@ -68,7 +68,7 @@ public class PlayerClusterScanner {
                 })
                 .max(Comparator.<DiveTarget>comparingInt(t -> t.members.size()).thenComparing(Comparator.comparingDouble(DiveTarget::spread).reversed()));
 
-        if (best.isPresent() || !FALLBACK_TO_SINGLE_PLAYER_ENDER_DRAGON_DIVE)
+        if (best.isPresent() || !fallbackToSingle)
         {
             return best;
         }
